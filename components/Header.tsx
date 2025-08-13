@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewType, User, Notification, NavigationAction } from '../types';
-import { LightbulbIcon, ClockIcon, CheckSquareIcon, MessageSquareIcon, DollarSignIcon } from '../constants';
+import { LightbulbIcon, ClockIcon, CheckSquareIcon, MessageSquareIcon, DollarSignIcon, UsersIcon } from '../constants';
 
 interface HeaderProps {
     pageTitle: ViewType;
@@ -9,6 +9,7 @@ interface HeaderProps {
     notifications: Notification[];
     handleNavigation: (view: ViewType, action?: NavigationAction, notificationId?: string) => void;
     handleMarkAllAsRead: () => void;
+    currentUser: User | null;
 }
 
 const MenuIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -53,9 +54,10 @@ const notificationIcons: { [key in Notification['icon']]: React.ReactNode } = {
     feedback: <MessageSquareIcon className="w-5 h-5 text-blue-400" />,
     payment: <DollarSignIcon className="w-5 h-5 text-red-400" />,
     completed: <CheckSquareIcon className="w-5 h-5 text-green-400" />,
+    comment: <MessageSquareIcon className="w-5 h-5 text-cyan-400" />,
 };
 
-const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, setIsSearchOpen, notifications, handleNavigation, handleMarkAllAsRead }) => {
+const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, setIsSearchOpen, notifications, handleNavigation, handleMarkAllAsRead, currentUser }) => {
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +90,18 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, setIsSearchOp
                 >
                     <MenuIcon className="h-6 w-6" />
                 </button>
-                 <h1 className="text-xl font-bold text-brand-text-light ml-2 lg:ml-0">{pageTitle}</h1>
+                 <h1 className="hidden lg:block text-xl font-bold text-brand-text-light ml-2 lg:ml-0">{pageTitle}</h1>
+
+                 {/* Mobile Header */}
+                 <div className="lg:hidden flex items-center gap-3 ml-2">
+                     <div className="w-10 h-10 rounded-full bg-brand-input flex items-center justify-center">
+                         <UsersIcon className="w-6 h-6 text-brand-text-secondary" />
+                     </div>
+                     <div>
+                         <p className="text-xs text-brand-text-secondary">Selamat Datang</p>
+                         <p className="font-bold text-brand-text-light -mt-1">{currentUser?.fullName.split(' ')[0]}</p>
+                     </div>
+                 </div>
             </div>
 
             <div className="flex items-center gap-2">

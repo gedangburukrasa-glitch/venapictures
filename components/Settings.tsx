@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Profile, Transaction, Project, User, ViewType } from '../types';
+import { Profile, Transaction, Project, User, ViewType, ProjectStatusConfig, SubStatusConfig } from '../types';
 import PageHeader from './PageHeader';
 import Modal from './Modal';
-import { PencilIcon, PlusIcon, Trash2Icon, KeyIcon, UsersIcon, ListIcon } from '../constants';
+import { PencilIcon, PlusIcon, Trash2Icon, KeyIcon, UsersIcon, ListIcon, FolderKanbanIcon } from '../constants';
 import { NAV_ITEMS } from '../constants';
 
 // Helper Component for Toggle Switches
@@ -76,6 +76,162 @@ const CategoryManager: React.FC<{
     );
 };
 
+// --- Sub-component for Project Status Management ---
+const ProjectStatusManager: React.FC<{
+    config: ProjectStatusConfig[];
+    onConfigChange: (newConfig: ProjectStatusConfig[]) => void;
+    projects: Project[];
+}> = ({ config, onConfigChange, projects }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+    const [selectedStatus, setSelectedStatus] = useState<ProjectStatusConfig | null>(null);
+    
+    const initialFormState = {
+        name: '',
+        color: '#64748b',
+        note: '',
+        subStatuses: [] as SubStatusConfig[],
+    };
+    const [form, setForm] = useState(initialFormState);
+
+    const handleOpenModal = (mode: 'add' | 'edit', status?: ProjectStatusConfig) => {
+        setModalMode(mode);
+        if (mode === 'edit' && status) {
+            setSelectedStatus(status);
+            setForm({
+                name: status.name,
+                color: status.color,
+                note: status.note,
+                subStatuses: [...status.subStatuses],
+            });
+        } else {
+            setSelectedStatus(null);
+            setForm(initialFormState);
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+    
+    const handleSubStatusChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const newSubStatuses = [...form.subStatuses];
+        newSubStatuses[index] = { ...newSubStatuses[index], [name]: value };
+        setForm(prev => ({ ...prev, subStatuses: newSubStatuses }));
+    };
+
+    const addSubStatus = () => {
+        setForm(prev => ({...prev, subStatuses: [...prev.subStatuses, { name: '', note: '' }] }));
+    };
+
+    const removeSubStatus = (index: number) => {
+        const newSubStatuses = [...form.subStatuses];
+        newSubStatuses.splice(index, 1);
+        setForm(prev => ({ ...prev, subStatuses: newSubStatuses }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (modalMode === 'add') {
+            const newStatus: ProjectStatusConfig = {
+                id: `status_${Date.now()}`,
+                ...form,
+                subStatuses: form.subStatuses.filter(s => s.name.trim() !== '')
+            };
+            onConfigChange([...config, newStatus]);
+        } else if (selectedStatus) {
+            const updatedConfig = config.map(s => 
+                s.id === selectedStatus.id ? { ...s, ...form, subStatuses: form.subStatuses.filter(sub => sub.name.trim() !== '') } : s
+            );
+            onConfigChange(updatedConfig);
+        }
+        handleCloseModal();
+    };
+
+    const handleDelete = (statusId: string) => {
+        const status = config.find(s => s.id === statusId);
+        if (!status) return;
+
+        const isUsed = projects.some(p => p.status === status.name);
+        if (isUsed) {
+            alert(`Status "${status.name}" tidak dapat dihapus karena sedang digunakan oleh proyek.`);
+            return;
+        }
+
+        if (window.confirm(`Yakin ingin menghapus status "${status.name}"?`)) {
+            onConfigChange(config.filter(s => s.id !== statusId));
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-brand-text-light">Manajemen Status Proyek</h3>
+                <button onClick={() => handleOpenModal('add')} className="button-primary inline-flex items-center gap-2">
+                    <PlusIcon className="w-5 h-5"/> Tambah Status
+                </button>
+            </div>
+            <div className="space-y-4">
+                {config.map(status => (
+                    <div key={status.id} className="p-4 bg-brand-bg rounded-lg">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: status.color }}></span>
+                                <span className="font-semibold text-brand-text-light">{status.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => handleOpenModal('edit', status)} className="p-2 text-brand-text-secondary hover:bg-brand-input rounded-full"><PencilIcon className="w-5 h-5"/></button>
+                                <button onClick={() => handleDelete(status.id)} className="p-2 text-brand-text-secondary hover:bg-brand-input rounded-full"><Trash2Icon className="w-5 h-5"/></button>
+                            </div>
+                        </div>
+                        {status.subStatuses.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-brand-border/50 pl-7 space-y-2">
+                                {status.subStatuses.map((sub, index) => (
+                                    <div key={index}><p className="text-sm font-medium text-brand-text-primary">{sub.name}</p><p className="text-xs text-brand-text-secondary">{sub.note}</p></div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+            
+            <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={modalMode === 'add' ? 'Tambah Status Baru' : `Edit Status: ${selectedStatus?.name}`}>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="input-group md:col-span-2"><input type="text" id="name" name="name" value={form.name} onChange={handleFormChange} className="input-field" required placeholder=" "/><label htmlFor="name" className="input-label">Nama Status</label></div>
+                        <div className="input-group"><input type="color" id="color" name="color" value={form.color} onChange={handleFormChange} className="input-field !p-1 h-12"/><label htmlFor="color" className="input-label">Warna</label></div>
+                    </div>
+                    <div className="input-group"><textarea id="note" name="note" value={form.note} onChange={e => setForm(p => ({...p, note: e.target.value}))} className="input-field" rows={2} placeholder=" "/><label htmlFor="note" className="input-label">Catatan/Deskripsi Status</label></div>
+                    
+                    <div>
+                        <h4 className="text-base font-semibold text-brand-text-light mb-2">Sub-Status</h4>
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                            {form.subStatuses.map((sub, index) => (
+                                <div key={index} className="p-3 bg-brand-bg rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+                                    <div className="input-group !mt-0"><input type="text" name="name" value={sub.name} onChange={e => handleSubStatusChange(index, e)} placeholder="Nama Sub-Status" className="input-field !p-2 !text-sm"/></div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="input-group flex-grow !mt-0"><input type="text" name="note" value={sub.note} onChange={e => handleSubStatusChange(index, e)} placeholder="Catatan" className="input-field !p-2 !text-sm"/></div>
+                                        <button type="button" onClick={() => removeSubStatus(index)} className="p-2 text-brand-danger hover:bg-brand-danger/10 rounded-full"><Trash2Icon className="w-4 h-4"/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <button type="button" onClick={addSubStatus} className="text-sm font-semibold text-brand-accent hover:underline mt-2">+ Tambah Sub-Status</button>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-6 border-t border-brand-border">
+                        <button type="button" onClick={handleCloseModal} className="button-secondary">Batal</button>
+                        <button type="submit" className="button-primary">{modalMode === 'add' ? 'Simpan Status' : 'Update Status'}</button>
+                    </div>
+                </form>
+            </Modal>
+        </div>
+    );
+};
 
 interface SettingsProps {
     profile: Profile;
@@ -109,6 +265,8 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile, transactions, 
     const [editingProjectType, setEditingProjectType] = useState<string | null>(null);
     const [eventTypeInput, setEventTypeInput] = useState('');
     const [editingEventType, setEditingEventType] = useState<string | null>(null);
+    const [sopCategoryInput, setSopCategoryInput] = useState('');
+    const [editingSopCategory, setEditingSopCategory] = useState<string | null>(null);
     
     // State for user management
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -365,11 +523,34 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile, transactions, 
             setProfile(prev => ({ ...prev, eventTypes: (prev.eventTypes || []).filter(t => t !== type) }));
         }
     };
+
+    const handleAddOrUpdateSopCategory = () => {
+        if (!sopCategoryInput.trim()) return;
+        const newCat = sopCategoryInput.trim();
+        const cats = profile.sopCategories || [];
+        if (editingSopCategory) {
+            if (newCat !== editingSopCategory && cats.includes(newCat)) { alert('Kategori ini sudah ada.'); return; }
+            setProfile(prev => ({ ...prev, sopCategories: cats.map(c => c === editingSopCategory ? newCat : c).sort() }));
+            setEditingSopCategory(null);
+        } else {
+            if (cats.includes(newCat)) { alert('Kategori ini sudah ada.'); return; }
+            setProfile(prev => ({ ...prev, sopCategories: [...cats, newCat].sort() }));
+        }
+        setSopCategoryInput('');
+    };
+    const handleEditSopCategory = (cat: string) => { setEditingSopCategory(cat); setSopCategoryInput(cat); };
+    const handleDeleteSopCategory = (cat: string) => {
+        // Not checking for usage in SOPs for now to keep it simple.
+        if (window.confirm(`Yakin ingin menghapus kategori SOP "${cat}"?`)) {
+            setProfile(prev => ({ ...prev, sopCategories: (prev.sopCategories || []).filter(c => c !== cat) }));
+        }
+    };
     
     const tabs = [
         { id: 'profile', label: 'Profil Saya', icon: UsersIcon, adminOnly: false },
         { id: 'users', label: 'Pengguna', icon: KeyIcon, adminOnly: true },
         { id: 'categories', label: 'Kustomisasi Kategori', icon: ListIcon, adminOnly: false },
+        { id: 'projectStatus', label: 'Status Proyek', icon: FolderKanbanIcon, adminOnly: true },
     ];
 
     const renderTabContent = () => {
@@ -392,6 +573,7 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile, transactions, 
                                 <div className="input-group"><input id="authorizedSigner" type="text" name="authorizedSigner" value={profile.authorizedSigner} onChange={handleInputChange} className="input-field" placeholder=" "/><label htmlFor="authorizedSigner" className="input-label">Nama Penanggung Jawab Tanda Tangan (u/ QR Code)</label></div>
                                 <div className="input-group"><textarea id="bio" name="bio" value={profile.bio} onChange={handleInputChange} className="input-field" placeholder=" " rows={3}></textarea><label htmlFor="bio" className="input-label">Bio Perusahaan</label></div>
                                 <div className="input-group"><textarea id="briefingTemplate" name="briefingTemplate" value={profile.briefingTemplate} onChange={handleInputChange} className="input-field" placeholder=" " rows={3}></textarea><label htmlFor="briefingTemplate" className="input-label">Template Pesan Briefing Tim</label></div>
+                                <div className="input-group"><textarea id="termsAndConditions" name="termsAndConditions" value={profile.termsAndConditions || ''} onChange={handleInputChange} className="input-field" placeholder=" " rows={15}></textarea><label htmlFor="termsAndConditions" className="input-label">Syarat & Ketentuan</label></div>
                             </div>
 
                             <h3 className="text-lg font-semibold text-brand-text-light border-b border-gray-700/50 pb-3 mt-8">Notifikasi</h3>
@@ -490,7 +672,30 @@ const Settings: React.FC<SettingsProps> = ({ profile, setProfile, transactions, 
                             onCancelEdit={() => { setEditingEventType(null); setEventTypeInput(''); }}
                             placeholder="e.g., Meeting Klien"
                         />
+                        <CategoryManager
+                            title="Kategori SOP"
+                            categories={profile.sopCategories}
+                            inputValue={sopCategoryInput}
+                            onInputChange={setSopCategoryInput}
+                            onAddOrUpdate={handleAddOrUpdateSopCategory}
+                            onEdit={handleEditSopCategory}
+                            onDelete={handleDeleteSopCategory}
+                            editingValue={editingSopCategory}
+                            onCancelEdit={() => { setEditingSopCategory(null); setSopCategoryInput(''); }}
+                            placeholder="e.g., Fotografi"
+                        />
                     </div>
+                );
+            case 'projectStatus':
+                 if (currentUser?.role !== 'Admin') return <p>Anda tidak memiliki akses ke halaman ini.</p>;
+                return (
+                    <ProjectStatusManager
+                        config={profile.projectStatusConfig}
+                        onConfigChange={(newConfig) => {
+                            setProfile(p => ({ ...p, projectStatusConfig: newConfig }));
+                        }}
+                        projects={projects}
+                    />
                 );
             default:
                 return null;

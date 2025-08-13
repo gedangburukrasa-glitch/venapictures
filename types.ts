@@ -1,4 +1,5 @@
 
+
 export type NavigationAction = {
   type: string;
   id?: string;
@@ -11,20 +12,11 @@ export interface Notification {
     message: string;
     timestamp: string; // ISO date string
     isRead: boolean;
-    icon: 'lead' | 'deadline' | 'revision' | 'feedback' | 'payment' | 'completed';
+    icon: 'lead' | 'deadline' | 'revision' | 'feedback' | 'payment' | 'completed' | 'comment';
     link?: {
         view: ViewType;
         action: NavigationAction;
     };
-}
-
-export type QRContentType = 'link' | 'text' | 'vcard' | 'wifi' | 'clientPortal' | 'freelancerPortal' | 'publicForm';
-
-export interface QRCodeRecord {
-    id: string;
-    name: string;
-    type: QRContentType;
-    content: string | Record<string, string>; // Can be a string or an object for complex types like vCard
 }
 
 export interface PromoCode {
@@ -37,6 +29,14 @@ export interface PromoCode {
     maxUsage?: number | null;
     expiryDate?: string | null;
     createdAt: string;
+}
+
+export interface SOP {
+    id: string;
+    title: string;
+    category: string;
+    content: string; // Markdown or plain text
+    lastUpdated: string; // ISO date string
 }
 
 
@@ -53,20 +53,22 @@ export enum ViewType {
   PROMO_CODES = 'Kode Promo',
   ASSETS = 'Manajemen Aset',
   CONTRACTS = 'Kontrak Kerja',
-  QR_GENERATOR = 'QR Generator',
   SOCIAL_MEDIA_PLANNER = 'Perencana Media Sosial',
+  SOP = 'SOP',
   SETTINGS = 'Pengaturan',
 }
 
-export enum ProjectStatus {
-  PENDING = 'Tertunda',
-  PREPARATION = 'Persiapan',
-  CONFIRMED = 'Dikonfirmasi',
-  EDITING = 'Editing',
-  PRINTING = 'Cetak',
-  SHIPPED = 'Dikirim',
-  COMPLETED = 'Selesai',
-  CANCELLED = 'Dibatalkan'
+export interface SubStatusConfig {
+    name: string;
+    note: string;
+}
+
+export interface ProjectStatusConfig {
+    id: string;
+    name: string;
+    color: string; // hex color
+    subStatuses: SubStatusConfig[];
+    note: string;
 }
 
 export enum PaymentStatus {
@@ -82,8 +84,12 @@ export enum ClientStatus {
   LOST = 'Hilang'
 }
 
+export enum ClientType {
+  DIRECT = 'Langsung',
+  VENDOR = 'Vendor',
+}
+
 export enum LeadStatus {
-    NEW = 'Baru Masuk',
     DISCUSSION = 'Sedang Diskusi',
     FOLLOW_UP = 'Menunggu Follow Up',
     CONVERTED = 'Dikonversi',
@@ -204,15 +210,27 @@ export interface Client {
   since: string;
   instagram?: string;
   status: ClientStatus;
+  clientType: ClientType;
   lastContact: string; // ISO Date String
   portalAccessId: string;
+}
+
+export interface PhysicalItem {
+    name: string;
+    price: number;
 }
 
 export interface Package {
   id: string;
   name: string;
   price: number;
-  description: string;
+  physicalItems: PhysicalItem[];
+  digitalItems: string[];
+  processingTime: string;
+  defaultPrintingCost?: number;
+  defaultTransportCost?: number;
+  photographers?: string;
+  videographers?: string;
 }
 
 export interface AddOn {
@@ -241,6 +259,15 @@ export interface AssignedTeamMember {
   role: string;
   fee: number; // The fee for THIS project
   reward?: number; // The reward for THIS project
+  subJob?: string;
+}
+
+export interface PrintingItem {
+  id: string;
+  type: 'Cetak Album' | 'Cetak Foto' | 'Flashdisk' | 'Custom';
+  customName?: string;
+  details: string;
+  cost: number;
 }
 
 export interface Project {
@@ -256,8 +283,8 @@ export interface Project {
   deadlineDate?: string;
   location: string;
   progress: number; // 0-100
-  status: ProjectStatus;
-  subStatus?: string;
+  status: string;
+  activeSubStatuses?: string[];
   totalCost: number;
   amountPaid: number;
   paymentStatus: PaymentStatus;
@@ -275,6 +302,17 @@ export interface Project {
   discountAmount?: number;
   shippingDetails?: string;
   dpProofUrl?: string;
+  printingDetails?: PrintingItem[];
+  printingCost?: number;
+  transportCost?: number;
+  isEditingConfirmedByClient?: boolean;
+  isPrintingConfirmedByClient?: boolean;
+  isDeliveryConfirmedByClient?: boolean;
+  confirmedSubStatuses?: string[];
+  clientSubStatusNotes?: Record<string, string>;
+  subStatusConfirmationSentAt?: Record<string, string>; // e.g. { 'Seleksi Foto': '2023-10-27T10:00:00Z' }
+  completedDigitalItems?: string[];
+  invoiceSignature?: string;
 }
 
 export enum TransactionType {
@@ -293,6 +331,8 @@ export interface Transaction {
   method: 'Transfer Bank' | 'Tunai' | 'E-Wallet' | 'Sistem' | 'Kartu';
   pocketId?: string;
   cardId?: string;
+  printingItemId?: string;
+  vendorSignature?: string;
 }
 
 export enum PocketType {
@@ -334,16 +374,17 @@ export interface Contract {
   projectId: string;
   signingDate: string; // ISO date
   signingLocation: string;
+  createdAt: string; // ISO date
   
-  // Pihak Kedua details (snapshot)
+  // From the form/errors
   clientName1: string;
   clientAddress1: string;
   clientPhone1: string;
-  clientName2: string;
-  clientAddress2: string;
-  clientPhone2: string;
-
-  // Pasal 2: Scope (snapshot/editable)
+  clientName2?: string;
+  clientAddress2?: string;
+  clientPhone2?: string;
+  
+  // Scope
   shootingDuration: string;
   guaranteedPhotos: string;
   albumDetails: string;
@@ -351,18 +392,16 @@ export interface Contract {
   otherItems: string;
   personnelCount: string;
   deliveryTimeframe: string;
-
-  // Pasal 5: Payment (snapshot/editable)
+  
+  // Payment & Legal
   dpDate: string;
   finalPaymentDate: string;
-
-  // Pasal 6: Cancellation (editable text)
   cancellationPolicy: string;
-  
-  // Pasal 7: Jurisdiction
   jurisdiction: string;
 
-  createdAt: string; // ISO date
+  // E-Signatures
+  vendorSignature?: string;
+  clientSignature?: string;
 }
 
 export interface NotificationSettings {
@@ -391,9 +430,13 @@ export interface Profile {
     projectTypes: string[];
     eventTypes: string[];
     assetCategories: string[];
+    sopCategories: string[];
+    projectStatusConfig: ProjectStatusConfig[];
     notificationSettings: NotificationSettings;
     securitySettings: SecuritySettings;
     briefingTemplate: string;
+    termsAndConditions?: string;
+    contractTemplate?: string;
 }
 
 export interface TeamProjectPayment {
@@ -414,6 +457,7 @@ export interface TeamPaymentRecord {
     date: string;
     projectPaymentIds: string[];
     totalAmount: number;
+    vendorSignature?: string;
 }
 
 export interface RewardLedgerEntry {

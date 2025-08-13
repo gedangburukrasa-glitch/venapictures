@@ -563,31 +563,61 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
         }
         if (type === 'transfer') {
             const amount = Number(form.amount);
-            if (!amount || amount <= 0) { alert("Jumlah tidak valid."); return; }
+            if (!amount || amount <= 0) {
+                alert("Jumlah tidak valid.");
+                return;
+            }
+        
             const isDeposit = form.type === 'deposit';
             const pocket = pockets.find(p => p.id === form.toPocketId);
+            // For withdrawal, form.fromCardId is the destination card.
             const card = cards.find(c => c.id === form.fromCardId);
-
-            if (!pocket || !card) { alert("Kantong atau kartu tidak valid."); return; }
-            
-            // This is a VIRTUAL allocation, so card balance should NOT change.
-            if (isDeposit) {
-                 setPockets(p => p.map(i => i.id === pocket.id ? { ...i, amount: i.amount + amount, sourceCardId: card.id } : i));
-            } else { // withdraw
-                 if (pocket.amount < amount) { alert(`Saldo kantong ${pocket.name} tidak mencukupi.`); return; }
-                 setPockets(p => p.map(i => i.id === pocket.id ? { ...i, amount: i.amount - amount } : i));
+        
+            if (!pocket || !card) {
+                alert("Kantong atau kartu tidak valid.");
+                return;
             }
             
+            // This logic ensures a true transfer of funds: one account is debited, the other is credited.
+            if (isDeposit) {
+                // Moving from Card to Pocket
+                if (card.balance < amount) {
+                    alert(`Saldo kartu ${card.bankName} tidak mencukupi.`);
+                    return;
+                }
+                setCards(prevCards => prevCards.map(c => 
+                    c.id === card.id ? { ...c, balance: c.balance - amount } : c
+                ));
+                setPockets(prevPockets => prevPockets.map(p => 
+                    p.id === pocket.id ? { ...p, amount: p.amount + amount, sourceCardId: card.id } : p
+                ));
+            } else { // Withdraw
+                // Moving from Pocket to Card
+                if (pocket.amount < amount) {
+                    alert(`Saldo kantong ${pocket.name} tidak mencukupi.`);
+                    return;
+                }
+                setPockets(prevPockets => prevPockets.map(p => 
+                    p.id === pocket.id ? { ...p, amount: p.amount - amount } : p
+                ));
+                setCards(prevCards => prevCards.map(c => 
+                    c.id === card.id ? { ...c, balance: c.balance + amount } : c
+                ));
+            }
+            
+            // Record the internal transfer transaction
             const transferTx: Transaction = {
-                id: `TRN-TFR-${Date.now()}`, date: new Date().toISOString().split('T')[0], amount,
-                description: `${isDeposit ? 'Setor ke' : 'Tarik dari'} ${pocket.name} via ${card.bankName}`,
-                type: 'Sistem' as any, // Not really income/expense
+                id: `TRN-TFR-${Date.now()}`,
+                date: new Date().toISOString().split('T')[0],
+                amount,
+                description: `${isDeposit ? 'Setor ke' : 'Tarik dari'} ${pocket.name} dari/ke ${card.bankName}`,
+                type: TransactionType.EXPENSE, // Treat as expense for cash flow purposes, but it's a balanced internal move.
                 category: 'Transfer Internal',
                 method: 'Sistem',
                 cardId: card.id,
                 pocketId: pocket.id,
             };
-            setTransactions(prev => [...prev, transferTx].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setTransactions(prev => [transferTx, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
          if (type === 'topup-cash') {
             const amount = Number(form.amount);
@@ -691,8 +721,9 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
     };
 
     const handleDownloadReportCSV = () => {
-        const headers = ['Tanggal', 'Deskripsi', 'Kategori', 'Tipe', 'Jumlah'];
+        const headers = ['ID Transaksi', 'Tanggal', 'Deskripsi', 'Kategori', 'Tipe', 'Jumlah'];
         const data = reportTransactions.map(t => [
+            t.id,
             new Date(t.date).toLocaleDateString('id-ID'),
             t.description,
             t.category,
@@ -704,8 +735,9 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
     };
 
     const handleDownloadProfitReportCSV = () => {
-        const headers = ['Nama Klien', 'Total Pemasukan', 'Total Biaya Produksi', 'Laba Kotor'];
+        const headers = ['ID Klien', 'Nama Klien', 'Total Pemasukan', 'Total Biaya Produksi', 'Laba Kotor'];
         const data = projectProfitabilityData.map(d => [
+            d!.clientId,
             d!.clientName,
             d!.totalIncome,
             d!.totalCost,
@@ -983,10 +1015,11 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
                                 </div>
                                 <div className="overflow-x-auto max-h-[500px] print:max-h-none print:overflow-visible">
                                     <table className="w-full text-sm">
-                                        <thead className="text-xs uppercase print-bg-slate bg-brand-input"><tr className="print-text-black"><th className="p-3 text-left">Nama Klien</th><th className="p-3 text-right">Total Pemasukan</th><th className="p-3 text-right">Total Biaya Produksi</th><th className="p-3 text-right">Laba Kotor</th></tr></thead>
+                                        <thead className="text-xs uppercase print-bg-slate bg-brand-input"><tr className="print-text-black"><th className="p-3 text-left">ID Klien</th><th className="p-3 text-left">Nama Klien</th><th className="p-3 text-right">Total Pemasukan</th><th className="p-3 text-right">Total Biaya Produksi</th><th className="p-3 text-right">Laba Kotor</th></tr></thead>
                                         <tbody className="divide-y divide-brand-border">
                                             {projectProfitabilityData.map(data => (
                                                 <tr key={data!.clientId}>
+                                                    <td className="p-3 font-mono text-xs">{data!.clientId}</td>
                                                     <td className="p-3 font-semibold">{data!.clientName}</td>
                                                     <td className="p-3 text-right text-brand-success">{formatCurrency(data!.totalIncome)}</td>
                                                     <td className="p-3 text-right text-brand-danger">{formatCurrency(data!.totalCost)}</td>
@@ -994,7 +1027,7 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
                                                 </tr>
                                             ))}
                                             {projectProfitabilityData.length === 0 && (
-                                                <tr><td colSpan={4} className="text-center p-8 text-brand-text-secondary">Tidak ada data proyek untuk periode ini.</td></tr>
+                                                <tr><td colSpan={5} className="text-center p-8 text-brand-text-secondary">Tidak ada data proyek untuk periode ini.</td></tr>
                                             )}
                                         </tbody>
                                     </table>
@@ -1090,9 +1123,9 @@ const Finance: React.FC<FinanceProps> = ({ transactions, setTransactions, pocket
         if (transactions.length === 0) return <p className="text-center py-10 text-brand-text-secondary">Tidak ada transaksi pada periode ini.</p>;
         return (
             <table className="w-full text-sm">
-                <thead className="text-xs uppercase print-bg-slate bg-brand-input"><tr className="print-text-black"><th className="p-3 text-left">Tanggal</th><th className="p-3 text-left">Deskripsi</th><th className="p-3 text-left">Kategori</th><th className="p-3 text-right">Jumlah</th></tr></thead>
+                <thead className="text-xs uppercase print-bg-slate bg-brand-input"><tr className="print-text-black"><th className="p-3 text-left">ID Transaksi</th><th className="p-3 text-left">Tanggal</th><th className="p-3 text-left">Deskripsi</th><th className="p-3 text-left">Kategori</th><th className="p-3 text-right">Jumlah</th></tr></thead>
                 <tbody className="divide-y divide-brand-border">
-                    {transactions.map(t => (<tr key={t.id}><td className="p-3">{new Date(t.date).toLocaleDateString('id-ID')}</td><td className="p-3 font-semibold">{t.description}</td><td className="p-3">{t.category}</td><td className={`p-3 text-right font-semibold ${t.type === TransactionType.INCOME ? 'print-text-green text-brand-success' : 'print-text-red text-brand-danger'}`}>{formatCurrency(t.amount)}</td></tr>))}
+                    {transactions.map(t => (<tr key={t.id}><td className="p-3 font-mono text-xs">{t.id}</td><td className="p-3">{new Date(t.date).toLocaleDateString('id-ID')}</td><td className="p-3 font-semibold">{t.description}</td><td className="p-3">{t.category}</td><td className={`p-3 text-right font-semibold ${t.type === TransactionType.INCOME ? 'print-text-green text-brand-success' : 'print-text-red text-brand-danger'}`}>{formatCurrency(t.amount)}</td></tr>))}
                 </tbody>
             </table>
         );

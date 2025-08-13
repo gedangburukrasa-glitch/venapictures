@@ -114,6 +114,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, users }) => {
                             </button>
                         </div>
                     </form>
+                    <div className="text-center mt-6">
+                        <a href="#/verify" className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+                            Verifikasi Dokumen Digital
+                        </a>
+                    </div>
                  </div>
             </div>
         </div>

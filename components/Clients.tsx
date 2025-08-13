@@ -1,22 +1,14 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Client, Project, PaymentStatus, Package, AddOn, ProjectStatus, TransactionType, Profile, Transaction, ClientStatus, Card, FinancialPocket, Contract, ViewType, NavigationAction, ClientFeedback, SatisfactionLevel, QRCodeRecord, PromoCode } from '../types';
+import { Client, Project, PaymentStatus, Package, AddOn, TransactionType, Profile, Transaction, ClientStatus, Card, FinancialPocket, Contract, ViewType, NavigationAction, ClientFeedback, SatisfactionLevel, PromoCode, ClientType } from '../types';
 import PageHeader from './PageHeader';
 import Modal from './Modal';
 import StatCard from './StatCard';
-import { EyeIcon, PencilIcon, Trash2Icon, FileTextIcon, PlusIcon, PrinterIcon, CreditCardIcon, Share2Icon, HistoryIcon, DollarSignIcon, FolderKanbanIcon, UsersIcon, TrendingUpIcon, AlertCircleIcon, LightbulbIcon, MessageSquareIcon, PhoneIncomingIcon, MapPinIcon, QrCodeIcon, StarIcon, TrendingDownIcon, ArrowDownIcon, ArrowUpIcon } from '../constants';
+import SignaturePad from './SignaturePad';
+import { EyeIcon, PencilIcon, Trash2Icon, FileTextIcon, PlusIcon, PrinterIcon, CreditCardIcon, Share2Icon, HistoryIcon, DollarSignIcon, FolderKanbanIcon, UsersIcon, TrendingUpIcon, AlertCircleIcon, LightbulbIcon, MessageSquareIcon, PhoneIncomingIcon, MapPinIcon, QrCodeIcon, StarIcon, TrendingDownIcon, ArrowDownIcon, ArrowUpIcon, DownloadIcon } from '../constants';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 }
-
-const generateSHA256 = async (data: string): Promise<string> => {
-    const textAsBuffer = new TextEncoder().encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', textAsBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-};
 
 const getPaymentStatusClass = (status: PaymentStatus | null) => {
     if (!status) return 'bg-gray-500/20 text-gray-400';
@@ -35,6 +27,7 @@ const initialFormState = {
     email: '',
     phone: '',
     instagram: '',
+    clientType: ClientType.DIRECT,
     // Project fields
     projectId: '', // Keep track of which project is being edited
     projectName: '',
@@ -50,6 +43,33 @@ const initialFormState = {
     driveLink: '',
     promoCodeId: '',
 };
+
+const downloadCSV = (headers: string[], data: (string | number)[][], filename: string) => {
+    const csvRows = [
+        headers.join(','),
+        ...data.map(row => 
+            row.map(field => {
+                const str = String(field);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            }).join(',')
+        )
+    ];
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 
 interface ClientFormProps {
     formData: typeof initialFormState;
@@ -102,6 +122,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ formData, handleFormChange, han
                 <div className="space-y-4">
                     <h4 className="text-base font-semibold text-gradient border-b border-brand-border pb-2">Informasi Klien</h4>
                     <div className="input-group"><input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} className="input-field" placeholder=" " required/><label htmlFor="clientName" className="input-label">Nama Klien</label></div>
+                    <div className="input-group">
+                        <select id="clientType" name="clientType" value={formData.clientType} onChange={handleFormChange} className="input-field" required>
+                            {Object.values(ClientType).map(ct => <option key={ct} value={ct}>{ct}</option>)}
+                        </select>
+                        <label htmlFor="clientType" className="input-label">Jenis Klien</label>
+                    </div>
                     <div className="input-group"><input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleFormChange} className="input-field" placeholder=" " required/><label htmlFor="phone" className="input-label">Nomor Telepon</label></div>
                     <div className="input-group"><input type="email" id="email" name="email" value={formData.email} onChange={handleFormChange} className="input-field" placeholder=" " required/><label htmlFor="email" className="input-label">Email</label></div>
                     <div className="input-group"><input type="text" id="instagram" name="instagram" value={formData.instagram} onChange={handleFormChange} className="input-field" placeholder=" "/><label htmlFor="instagram" className="input-label">Instagram (@username)</label></div>
@@ -194,7 +220,7 @@ interface ClientDetailModalProps {
     onClose: () => void;
     onEditClient: (client: Client) => void;
     onDeleteClient: (clientId: string) => void;
-    onViewReceipt: (project: Project) => void;
+    onViewReceipt: (transaction: Transaction) => void;
     onViewInvoice: (project: Project) => void;
     handleNavigation: (view: ViewType, action: NavigationAction) => void;
     onRecordPayment: (projectId: string, amount: number, destinationCardId: string) => void;
@@ -272,6 +298,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, projects,
                             <table className="w-full text-sm">
                                 <tbody>
                                     <tr className="border-b border-brand-border"><td className="py-2.5 text-brand-text-secondary w-1/3 sm:w-1/4">Nama Lengkap</td><td className="py-2.5 text-brand-text-light font-semibold">{client.name}</td></tr>
+                                    <tr className="border-b border-brand-border"><td className="py-2.5 text-brand-text-secondary">Jenis Klien</td><td className="py-2.5 text-brand-text-light font-semibold">{client.clientType}</td></tr>
                                     <tr className="border-b border-brand-border"><td className="py-2.5 text-brand-text-secondary">Email</td><td className="py-2.5 text-brand-text-light font-semibold">{client.email}</td></tr>
                                     <tr className="border-b border-brand-border"><td className="py-2.5 text-brand-text-secondary">Telepon</td><td className="py-2.5 text-brand-text-light font-semibold">{client.phone}</td></tr>
                                     <tr className="border-b border-brand-border"><td className="py-2.5 text-brand-text-secondary">Instagram</td><td className="py-2.5 text-brand-text-light font-semibold">{client.instagram || '-'}</td></tr>
@@ -309,7 +336,16 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, projects,
                                                 <span>Sisa: <span className="font-medium text-red-400">{formatCurrency(remainingBalance)}</span></span>
                                             </div>
                                         </div>
-                                        <button onClick={() => onViewInvoice(p)} className="button-secondary text-sm inline-flex items-center gap-2 flex-shrink-0"><FileTextIcon className="w-4 h-4" /> Lihat Invoice</button>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {p.dpProofUrl && (
+                                                <a href={p.dpProofUrl} target="_blank" rel="noopener noreferrer" className="button-secondary text-sm inline-flex items-center gap-2">
+                                                    <CreditCardIcon className="w-4 h-4" /> Lihat Bukti DP
+                                                </a>
+                                            )}
+                                            <button onClick={() => onViewInvoice(p)} className="button-secondary text-sm inline-flex items-center gap-2">
+                                                <FileTextIcon className="w-4 h-4" /> Lihat Invoice
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <h4 className="text-base font-semibold text-brand-text-light mt-4 mb-2">Detail Transaksi Pembayaran</h4>
@@ -318,7 +354,7 @@ const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, projects,
                                             <thead><tr className="bg-brand-bg"><th className="p-3 text-left font-medium text-brand-text-secondary">Tanggal</th><th className="p-3 text-left font-medium text-brand-text-secondary">Deskripsi</th><th className="p-3 text-right font-medium text-brand-text-secondary">Jumlah</th><th className="p-3 text-center font-medium text-brand-text-secondary">Aksi</th></tr></thead>
                                             <tbody>
                                                 {transactionsForProject.length > 0 ? transactionsForProject.map(t => (
-                                                    <tr key={t.id} className="border-t border-brand-border"><td className="p-3">{new Date(t.date).toLocaleDateString('id-ID')}</td><td className="p-3">{t.description}</td><td className="p-3 text-right font-semibold text-green-400">{formatCurrency(t.amount)}</td><td className="p-3 text-center"><button onClick={() => onViewReceipt(p)} className="p-1 text-brand-text-secondary hover:text-brand-accent"><PrinterIcon className="w-5 h-5"/></button></td></tr>
+                                                    <tr key={t.id} className="border-t border-brand-border"><td className="p-3">{new Date(t.date).toLocaleDateString('id-ID')}</td><td className="p-3">{t.description}</td><td className="p-3 text-right font-semibold text-green-400">{formatCurrency(t.amount)}</td><td className="p-3 text-center"><button onClick={() => onViewReceipt(t)} className="p-1 text-brand-text-secondary hover:text-brand-accent"><PrinterIcon className="w-5 h-5"/></button></td></tr>
                                                 )) : (
                                                     <tr><td colSpan={4} className="text-center p-4 text-brand-text-secondary">Belum ada pembayaran untuk proyek ini.</td></tr>
                                                 )}
@@ -412,12 +448,13 @@ interface ClientsProps {
     contracts: Contract[];
     handleNavigation: (view: ViewType, action: NavigationAction) => void;
     clientFeedback: ClientFeedback[];
-    qrCodes: QRCodeRecord[];
     promoCodes: PromoCode[];
     setPromoCodes: React.Dispatch<React.SetStateAction<PromoCode[]>>;
+    onSignInvoice: (projectId: string, signatureDataUrl: string) => void;
+    onSignTransaction: (transactionId: string, signatureDataUrl: string) => void;
 }
 
-const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setProjects, packages, addOns, transactions, setTransactions, userProfile, showNotification, initialAction, setInitialAction, cards, setCards, pockets, setPockets, contracts, handleNavigation, clientFeedback, qrCodes, promoCodes, setPromoCodes }) => {
+const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setProjects, packages, addOns, transactions, setTransactions, userProfile, showNotification, initialAction, setInitialAction, cards, setCards, pockets, setPockets, contracts, handleNavigation, clientFeedback, promoCodes, setPromoCodes, onSignInvoice, onSignTransaction }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -427,8 +464,8 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [clientForDetail, setClientForDetail] = useState<Client | null>(null);
 
-    const [documentToView, setDocumentToView] = useState<{ type: 'invoice' | 'receipt', project: Project } | null>(null);
-    const [showDigitalSignature, setShowDigitalSignature] = useState(false);
+    const [documentToView, setDocumentToView] = useState<{ type: 'invoice', project: Project } | { type: 'receipt', transaction: Transaction } | null>(null);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [qrModalContent, setQrModalContent] = useState<{ title: string; url: string } | null>(null);
     
     // New state for filters and UI
@@ -451,66 +488,6 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
             setInitialAction(null); // Reset action after handling
         }
     }, [initialAction, clients, setInitialAction]);
-    
-     useEffect(() => {
-        if (documentToView && showDigitalSignature) {
-            const generateQrCode = async () => {
-                if (!clientForDetail) return;
-                const project = documentToView.project;
-                let dataToSign;
-
-                if (documentToView.type === 'invoice') {
-                    dataToSign = {
-                        jenis_qr: "Verifikasi Invoice Digital",
-                        no_invoice: `INV-${project.id.slice(-6)}`,
-                        klien: clientForDetail.name,
-                        proyek: project.projectName,
-                        total_tagihan: formatCurrency(project.totalCost),
-                        sisa_tagihan: formatCurrency(project.totalCost - project.amountPaid),
-                        tanggal_terbit: new Date().toISOString(),
-                    };
-                } else { // receipt
-                    const relatedTransactions = transactions.filter(t => t.projectId === project.id && t.type === TransactionType.INCOME);
-                    dataToSign = {
-                        jenis_qr: "Verifikasi Kwitansi Digital",
-                        no_kwitansi: `RCPT-${project.id.slice(-6)}`,
-                        klien: clientForDetail.name,
-                        proyek: project.projectName,
-                        total_dibayar: formatCurrency(relatedTransactions.reduce((sum, t) => sum + t.amount, 0)),
-                        tanggal_terbit: new Date().toISOString(),
-                    };
-                }
-
-                const signatureText = qrCodes[0] && typeof qrCodes[0].content === 'string' ? qrCodes[0].content : 'Digitally Signed by Vena Pictures';
-                const dataString = JSON.stringify(dataToSign);
-                const hash = await generateSHA256(dataString);
-                // Reduce QR data to only essential fields
-                const compactQrData = JSON.stringify({
-                    pesan_tanda_tangan: signatureText,
-                    kode_verifikasi: hash
-                });
-                
-                setTimeout(() => {
-                    const qrContainerId = documentToView.type === 'invoice' ? 'invoice-qrcode-container' : 'receipt-qrcode-container';
-                    const qrCodeContainer = document.getElementById(qrContainerId);
-                    if (qrCodeContainer) {
-                        qrCodeContainer.innerHTML = '';
-                        if (typeof (window as any).QRCode !== 'undefined') {
-                            new (window as any).QRCode(qrCodeContainer, {
-                                text: compactQrData,
-                                width: 80,
-                                height: 80,
-                                colorDark: "#000000",
-                                colorLight: "#ffffff",
-                                correctLevel: 2 // H
-                            });
-                        }
-                    }
-                }, 100);
-            };
-            generateQrCode();
-        }
-    }, [documentToView, showDigitalSignature, clientForDetail, transactions, qrCodes]);
     
     const bookingFormUrl = useMemo(() => {
         return `${window.location.origin}${window.location.pathname}#/public-booking`;
@@ -581,6 +558,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                 email: client.email,
                 phone: client.phone,
                 instagram: client.instagram || '',
+                clientType: client.clientType,
                 projectId: project.id,
                 projectName: project.projectName,
                 projectType: project.projectType,
@@ -597,7 +575,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
             });
         } else if (mode === 'add' && client) { // Adding new project for existing client
              setSelectedClient(client);
-             setFormData({ ...initialFormState, clientId: client.id, clientName: client.name, email: client.email, phone: client.phone, instagram: client.instagram || '' });
+             setFormData({ ...initialFormState, clientId: client.id, clientName: client.name, email: client.email, phone: client.phone, instagram: client.instagram || '', clientType: client.clientType });
         } else { // Adding new client
             setSelectedClient(null);
             setSelectedProject(null);
@@ -609,7 +587,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setDocumentToView(null);
-        setShowDigitalSignature(false);
+        setIsSignatureModalOpen(false);
     };
     
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -721,6 +699,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                     email: formData.email,
                     phone: formData.phone,
                     instagram: formData.instagram,
+                    clientType: formData.clientType,
                     since: new Date().toISOString().split('T')[0],
                     status: ClientStatus.ACTIVE,
                     lastContact: new Date().toISOString(),
@@ -731,6 +710,16 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
              
             const dpAmount = Number(formData.dp) || 0;
             const remainingPayment = totalProject - dpAmount;
+
+            const physicalItemsFromPackage = selectedPackage.physicalItems.map((item, index) => ({
+                id: `pi-${Date.now()}-${index}`,
+                type: 'Custom' as 'Custom',
+                customName: item.name,
+                details: item.name,
+                cost: item.price,
+            }));
+
+            const printingCostFromPackage = physicalItemsFromPackage.reduce((sum, item) => sum + item.cost, 0);
 
             const newProject: Project = {
                 id: `PRJ${Date.now()}`,
@@ -744,7 +733,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                 date: formData.date,
                 location: formData.location,
                 progress: 0,
-                status: ProjectStatus.CONFIRMED,
+                status: 'Dikonfirmasi',
                 totalCost: totalProject,
                 amountPaid: dpAmount,
                 paymentStatus: dpAmount > 0 ? (remainingPayment <= 0 ? PaymentStatus.LUNAS : PaymentStatus.DP_TERBAYAR) : PaymentStatus.BELUM_BAYAR,
@@ -754,6 +743,9 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                 driveLink: formData.driveLink,
                 promoCodeId: formData.promoCodeId || undefined,
                 discountAmount: finalDiscountAmount > 0 ? finalDiscountAmount : undefined,
+                printingDetails: physicalItemsFromPackage,
+                printingCost: printingCostFromPackage,
+                completedDigitalItems: [],
             };
             setProjects(prev => [newProject, ...prev]);
 
@@ -780,7 +772,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
             showNotification(`Klien ${formData.clientName} dan proyek baru berhasil ditambahkan.`);
 
         } else if (modalMode === 'edit' && selectedClient && selectedProject) {
-            setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, name: formData.clientName, email: formData.email, phone: formData.phone, instagram: formData.instagram } : c));
+            setClients(prev => prev.map(c => c.id === selectedClient.id ? { ...c, name: formData.clientName, email: formData.email, phone: formData.phone, instagram: formData.instagram, clientType: formData.clientType } : c));
             
             setProjects(prev => prev.map(p => {
                 if (p.id === selectedProject.id) {
@@ -858,132 +850,99 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
         showNotification('Pembayaran berhasil dicatat.');
     };
     
+    const handleDownloadClients = () => {
+        const headers = ['Nama', 'Email', 'Telepon', 'Status', 'Total Nilai Proyek', 'Sisa Tagihan', 'Paket Terbaru'];
+        const data = filteredClientData.map(client => [
+            `"${client.name.replace(/"/g, '""')}"`,
+            client.email,
+            client.phone,
+            client.status,
+            client.totalProyekValue,
+            client.balanceDue,
+            client.paketTerbaru
+        ]);
+        downloadCSV(headers, data, `data-klien-${new Date().toISOString().split('T')[0]}.csv`);
+    };
+    
+    const handleSaveSignature = (signatureDataUrl: string) => {
+        if (documentToView?.type === 'invoice' && documentToView.project) {
+            onSignInvoice(documentToView.project.id, signatureDataUrl);
+        } else if (documentToView?.type === 'receipt' && documentToView.transaction) {
+            onSignTransaction(documentToView.transaction.id, signatureDataUrl);
+        }
+        setIsSignatureModalOpen(false);
+    };
+
     const renderDocumentBody = () => {
         if (!documentToView || !clientForDetail) return null;
-        
-        const project = documentToView.project;
-        const selectedPackage = packages.find(p => p.id === project.packageId);
+        const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
         
         if (documentToView.type === 'invoice') {
+            const project = documentToView.project;
+            const selectedPackage = packages.find(p => p.id === project.packageId);
+            const remaining = project.totalCost - (project.discountAmount || 0) - project.amountPaid;
             return (
                 <div id="invoice-content" className="p-1">
-                    <div className="printable-content bg-white p-8 font-sans text-gray-800">
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold text-gray-900">{userProfile.companyName}</h1>
-                                <p className="text-gray-500">{userProfile.address}</p>
-                            </div>
-                            <div className="text-right">
-                                <h2 className="text-2xl font-semibold text-gray-400 uppercase tracking-widest">INVOICE</h2>
-                                <p className="text-gray-500 mt-1">No: INV-{project.id.slice(-6)}</p>
-                                <p className="text-gray-500">Tanggal: {new Date().toLocaleDateString('id-ID')}</p>
-                            </div>
-                        </div>
-
-                        {/* Info Cards */}
-                        <div className="grid grid-cols-3 gap-6 mb-8">
-                            <div className="bg-gray-50 printable-bg-gray p-4 rounded-lg">
-                                <h3 className="text-sm font-semibold text-gray-500 mb-1">Ditagihkan Kepada</h3>
-                                <p className="font-bold text-gray-900">{clientForDetail.name}</p>
-                                <p className="text-gray-600 text-sm">{clientForDetail.email}</p>
-                            </div>
-                             <div className="bg-gray-50 printable-bg-gray p-4 rounded-lg">
-                                <h3 className="text-sm font-semibold text-gray-500 mb-1">Diterbitkan Oleh</h3>
-                                <p className="font-bold text-gray-900">{userProfile.companyName}</p>
-                                <p className="text-gray-600 text-sm">{userProfile.email}</p>
-                            </div>
-                            <div className="bg-blue-500 printable-bg-blue text-white printable-text-white p-4 rounded-lg text-center">
-                                <h3 className="text-sm font-semibold text-blue-100 mb-1">Jumlah Tagihan</h3>
-                                <p className="font-bold text-3xl">{formatCurrency(project.totalCost - project.amountPaid)}</p>
-                                <p className="text-xs text-blue-200 mt-1">Jatuh Tempo: {new Date(project.date).toLocaleDateString('id-ID')}</p>
-                            </div>
-                        </div>
-
-                        {/* Items Table */}
-                        <table className="w-full text-left mb-8">
-                            <thead className="print-table-header">
-                                <tr>
-                                    <th className="p-3 text-sm font-semibold text-gray-600">Deskripsi</th>
-                                    <th className="p-3 text-sm font-semibold text-gray-600 text-center">Jml</th>
-                                    <th className="p-3 text-sm font-semibold text-gray-600 text-right">Harga</th>
-                                    <th className="p-3 text-sm font-semibold text-gray-600 text-right">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="print-table-row">
-                                    <td className="p-3">
-                                        <p className="font-semibold text-gray-800">{project.packageName}</p>
-                                        <p className="text-xs text-gray-500">{selectedPackage?.description}</p>
-                                    </td>
-                                    <td className="p-3 text-center">1</td>
-                                    <td className="p-3 text-right">{formatCurrency(selectedPackage?.price || 0)}</td>
-                                    <td className="p-3 text-right">{formatCurrency(selectedPackage?.price || 0)}</td>
-                                </tr>
-                                {project.addOns.map(addon => (
-                                <tr key={addon.id} className="print-table-row">
-                                    <td className="p-3 pl-6 text-gray-600">- {addon.name}</td>
-                                    <td className="p-3 text-center">1</td>
-                                    <td className="p-3 text-right">{formatCurrency(addon.price)}</td>
-                                    <td className="p-3 text-right">{formatCurrency(addon.price)}</td>
-                                </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {/* Totals & Footer */}
-                        <div className="flex justify-between items-start">
-                             <div className={`transition-opacity duration-300 ${showDigitalSignature ? 'opacity-100' : 'opacity-0'}`}>
-                                <h4 className="font-semibold text-gray-600">Tanda Tangan Digital</h4>
-                                <div className="flex flex-col items-center">
-                                    <div id="invoice-qrcode-container" className="mt-2 p-1 bg-white inline-block"></div>
-                                    {showDigitalSignature && qrCodes[0] && typeof qrCodes[0].content === 'string' && <p className="text-[8px] text-gray-500 max-w-[100px] text-center mt-1">{qrCodes[0].content}</p>}
+                    <div className="printable-content bg-slate-50 font-sans text-slate-800 printable-area">
+                        <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 shadow-lg">
+                            <header className="flex justify-between items-start mb-12">
+                                <div>
+                                    <h1 className="text-3xl font-extrabold text-slate-900">{userProfile.companyName}</h1>
+                                    <p className="text-sm text-slate-500">{userProfile.address}</p>
+                                    <p className="text-sm text-slate-500">{userProfile.phone} | {userProfile.email}</p>
                                 </div>
-                            </div>
-                            <div className="w-2/5 space-y-2">
-                                <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-semibold">{formatCurrency(project.totalCost)}</span></div>
-                                <div className="flex justify-between"><span className="text-gray-500">Telah Dibayar</span><span className="font-semibold">{formatCurrency(project.amountPaid)}</span></div>
-                                <div className="flex justify-between font-bold text-lg text-gray-900 border-t pt-2 mt-2"><span >Sisa Tagihan</span><span>{formatCurrency(project.totalCost - project.amountPaid)}</span></div>
-                            </div>
+                                <div className="text-right">
+                                    <h2 className="text-2xl font-bold uppercase text-slate-400 tracking-widest">Invoice</h2>
+                                    <p className="text-sm text-slate-500 mt-1">No: <span className="font-semibold text-slate-700">INV-{project.id.slice(-6)}</span></p>
+                                    <p className="text-sm text-slate-500">Tanggal: <span className="font-semibold text-slate-700">{new Date().toLocaleDateString('id-ID')}</span></p>
+                                </div>
+                            </header>
+
+                            <section className="grid md:grid-cols-3 gap-6 mb-12">
+                                <div className="bg-slate-50 p-6 rounded-xl"><h3 className="text-xs font-semibold uppercase text-slate-400 mb-2">Ditagihkan Kepada</h3><p className="font-bold text-slate-800">{clientForDetail.name}</p><p className="text-sm text-slate-600">{clientForDetail.email}</p><p className="text-sm text-slate-600">{clientForDetail.phone}</p></div>
+                                <div className="bg-slate-50 p-6 rounded-xl"><h3 className="text-xs font-semibold uppercase text-slate-400 mb-2">Diterbitkan Oleh</h3><p className="font-bold text-slate-800">{userProfile.companyName}</p><p className="text-sm text-slate-600">{userProfile.email}</p><p className="text-sm text-slate-600">{userProfile.phone}</p></div>
+                                <div className="bg-blue-600 text-white p-6 rounded-xl printable-bg-blue printable-text-white"><h3 className="text-xs font-semibold uppercase text-blue-200 mb-2">Total Tagihan</h3><p className="font-extrabold text-3xl tracking-tight">{formatCurrency(remaining)}</p><p className="text-sm text-blue-200 mt-1">Jatuh Tempo: {formatDate(project.date)}</p></div>
+                            </section>
+
+                            <section><table className="w-full text-left">
+                                <thead><tr className="border-b-2 border-slate-200"><th className="p-3 text-sm font-semibold uppercase text-slate-500">Deskripsi</th><th className="p-3 text-sm font-semibold uppercase text-slate-500 text-center">Jml</th><th className="p-3 text-sm font-semibold uppercase text-slate-500 text-right">Harga</th><th className="p-3 text-sm font-semibold uppercase text-slate-500 text-right">Total</th></tr></thead>
+                                <tbody>
+                                    <tr><td className="p-3 align-top"><p className="font-semibold text-slate-800">{project.packageName}</p><p className="text-xs text-slate-500">{selectedPackage?.digitalItems.join(', ')}</p></td><td className="p-3 text-center align-top">1</td><td className="p-3 text-right align-top">{formatCurrency(selectedPackage?.price || 0)}</td><td className="p-3 text-right align-top">{formatCurrency(selectedPackage?.price || 0)}</td></tr>
+                                    {project.addOns.map(addon => (<tr key={addon.id}><td className="p-3 text-slate-600 align-top">- {addon.name}</td><td className="p-3 text-center align-top">1</td><td className="p-3 text-right align-top">{formatCurrency(addon.price)}</td><td className="p-3 text-right align-top">{formatCurrency(addon.price)}</td></tr>))}
+                                </tbody>
+                            </table></section>
+
+                            <section className="mt-12">
+                                <div className="flex justify-between">
+                                    <div className="w-2/5"><h4 className="font-semibold text-slate-600">Tanda Tangan</h4>{project.invoiceSignature ? (<img src={project.invoiceSignature} alt="Tanda Tangan" className="h-20 mt-2 object-contain" />) : (<div className="h-20 mt-2 flex items-center justify-center text-xs text-slate-400 italic border border-dashed rounded-lg">Belum Ditandatangani</div>)}</div>
+                                    <div className="w-2/5 space-y-2 text-sm">
+                                        <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span className="font-semibold text-slate-800">{formatCurrency(project.totalCost)}</span></div>
+                                        {project.discountAmount && project.discountAmount > 0 && (<div className="flex justify-between"><span className="text-slate-500">Diskon</span><span className="font-semibold text-green-600 print-text-green">-{formatCurrency(project.discountAmount)}</span></div>)}
+                                        <div className="flex justify-between"><span className="text-slate-500">Telah Dibayar</span><span className="font-semibold text-slate-800">-{formatCurrency(project.amountPaid)}</span></div>
+                                        <div className="flex justify-between font-bold text-lg text-slate-900 border-t-2 border-slate-300 pt-2 mt-2"><span>Sisa Tagihan</span><span>{formatCurrency(remaining)}</span></div>
+                                    </div>
+                                </div>
+                            </section>
+                            
+                            <footer className="mt-12 pt-8 border-t-2 border-slate-200"><p className="text-xs text-slate-500 text-center">Jika Anda memiliki pertanyaan, silakan hubungi kami di {userProfile.phone}</p><div className="w-full h-2 bg-blue-600 mt-6 rounded"></div></footer>
                         </div>
                     </div>
                 </div>
             );
         } else { // Receipt
-            const relatedTransactions = transactions.filter(t => t.projectId === project.id && t.type === TransactionType.INCOME);
+            const transaction = documentToView.transaction;
+            const project = projects.find(p => p.id === transaction.projectId);
              return (
                 <div id="receipt-content" className="p-1">
-                     <div className="printable-content bg-white text-black p-8 font-sans">
-                        <header className="flex justify-between items-start pb-4 border-b border-slate-200">
-                            <div><h2 className="text-2xl font-bold text-green-600">KWITANSI</h2><p className="text-sm text-slate-500">No: RCPT-{project.id.slice(-6)}</p></div>
-                             <div className="text-right"><h3 className="font-bold text-lg text-slate-800">{userProfile.companyName}</h3></div>
-                        </header>
-                         <section className="my-6 space-y-1 text-sm">
-                             <p><strong>Telah diterima dari:</strong> {clientForDetail.name}</p>
-                             <p><strong>Jumlah:</strong> {formatCurrency(relatedTransactions.reduce((sum, t) => sum + t.amount, 0))}</p>
-                             <p><strong>Untuk Pembayaran:</strong> Proyek {project.projectName}</p>
-                        </section>
-                         <section>
-                            <h4 className="font-semibold text-slate-600 mb-2 text-sm">Rincian Pembayaran:</h4>
-                            <table className="w-full text-sm">
-                                <thead className="bg-slate-100 print-bg-slate"><tr><th className="p-2 text-left">Tanggal</th><th className="p-2 text-left">Deskripsi</th><th className="p-2 text-right">Jumlah</th></tr></thead>
-                                <tbody className="divide-y divide-slate-200">
-                                    {relatedTransactions.map(t => (<tr key={t.id}><td className="p-2">{new Date(t.date).toLocaleDateString('id-ID')}</td><td className="p-2">{t.description}</td><td className="p-2 text-right">{formatCurrency(t.amount)}</td></tr>))}
-                                </tbody>
-                            </table>
-                        </section>
-                         <footer className="mt-12 text-xs text-slate-500">
-                             <div className="flex justify-between items-end">
-                                <p>Terima kasih atas pembayaran Anda.</p>
-                                <div className={`text-center ${showDigitalSignature ? '' : 'hidden'}`}>
-                                    <p>Diverifikasi oleh,</p>
-                                    <div id="receipt-qrcode-container" className="flex justify-center my-2"></div>
-                                    {showDigitalSignature && qrCodes[0] && typeof qrCodes[0].content === 'string' && <p className="text-[8px] text-gray-500 max-w-[100px] text-center mx-auto">{qrCodes[0].content}</p>}
-                                    <p className="font-medium text-slate-900 mt-1">({userProfile.authorizedSigner || userProfile.companyName})</p>
-                                </div>
-                            </div>
-                        </footer>
-                     </div>
+                     <div className="printable-content bg-slate-50 font-sans text-slate-800 printable-area">
+                        <div className="max-w-md mx-auto bg-white p-8 shadow-lg rounded-xl">
+                            <header className="text-center mb-8"><h1 className="text-2xl font-bold text-slate-900">KWITANSI PEMBAYARAN</h1><p className="text-sm text-slate-500">{userProfile.companyName}</p></header>
+                            <div className="p-4 bg-green-500/10 border border-green-200 rounded-lg text-center mb-8 printable-bg-green-light"><p className="text-sm font-semibold text-green-700 print-text-green">PEMBAYARAN DITERIMA</p><p className="text-3xl font-bold text-green-800 print-text-green mt-1">{formatCurrency(transaction.amount)}</p></div>
+                            <div className="space-y-3 text-sm"><div className="flex justify-between"><span className="text-slate-500">No. Kwitansi</span><span className="font-semibold text-slate-700 font-mono">{transaction.id.slice(0,12)}</span></div><div className="flex justify-between"><span className="text-slate-500">Tanggal Bayar</span><span className="font-semibold text-slate-700">{formatDate(transaction.date)}</span></div><div className="flex justify-between"><span className="text-slate-500">Diterima dari</span><span className="font-semibold text-slate-700">{clientForDetail.name}</span></div><div className="flex justify-between"><span className="text-slate-500">Metode</span><span className="font-semibold text-slate-700">{transaction.method}</span></div></div>
+                            <div className="mt-6 pt-6 border-t border-slate-200"><p className="text-sm text-slate-500">Untuk pembayaran:</p><p className="font-semibold text-slate-800 mt-1">{transaction.description}</p>{project && (<div className="mt-2 text-xs text-slate-500"><p>Proyek: {project.projectName}</p><p>Total Tagihan: {formatCurrency(project.totalCost)} | Sisa: {formatCurrency(project.totalCost - project.amountPaid)}</p></div>)}</div>
+                            <footer className="mt-12 flex justify-between items-end"><p className="text-xs text-slate-400">Terima kasih.</p><div className="text-center">{transaction.vendorSignature ? (<img src={transaction.vendorSignature} alt="Tanda Tangan" className="h-16 object-contain" />) : (<div className="h-16 flex items-center justify-center text-xs text-slate-400 italic border-b border-dashed">Belum Ditandatangani</div>)}<p className="text-xs font-semibold text-slate-600 mt-1">({userProfile.authorizedSigner || userProfile.companyName})</p></div></footer>
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -1003,6 +962,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
         <div className="space-y-6">
             <PageHeader title="Manajemen Klien" subtitle="Kelola semua klien yang sudah ada, baik yang aktif maupun tidak aktif.">
                 <div className="flex items-center gap-2">
+                    <button onClick={handleDownloadClients} className="button-secondary inline-flex items-center gap-2 text-sm font-semibold"><DownloadIcon className="w-4 h-4"/>Unduh Data</button>
                     <button onClick={() => setIsBookingFormShareModalOpen(true)} className="button-secondary inline-flex items-center gap-2 text-sm font-semibold"><Share2Icon className="w-4 h-4"/>Bagikan Form Booking</button>
                     <button onClick={() => handleOpenModal('add')} className="button-primary inline-flex items-center gap-2"><PlusIcon className="w-5 h-5"/>TAMBAH KLIEN</button>
                 </div>
@@ -1058,11 +1018,12 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                     {activeSectionOpen && (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-brand-text-secondary uppercase bg-brand-bg"><tr><th className="px-4 py-3">Nama</th><th className="px-4 py-3">Kontak</th><th className="px-4 py-3">Paket Terbaru</th><th className="px-4 py-3">Total Proyek</th><th className="px-4 py-3">Status Pembayaran</th><th className="px-4 py-3 text-center">Aksi</th></tr></thead>
+                                <thead className="text-xs text-brand-text-secondary uppercase bg-brand-bg"><tr><th className="px-4 py-3">Nama</th><th className="px-4 py-3">Jenis Klien</th><th className="px-4 py-3">Kontak</th><th className="px-4 py-3">Paket Terbaru</th><th className="px-4 py-3">Total Proyek</th><th className="px-4 py-3">Status Pembayaran</th><th className="px-4 py-3 text-center">Aksi</th></tr></thead>
                                 <tbody className="divide-y divide-brand-border">
                                     {activeClients.map(client => (
                                         <tr key={client.id} className="hover:bg-brand-bg">
                                             <td className="px-4 py-3 font-semibold text-brand-text-light">{client.name}</td>
+                                            <td className="px-4 py-3 text-brand-text-primary">{client.clientType}</td>
                                             <td className="px-4 py-3 text-brand-text-secondary">{client.email}<br/>{client.phone}</td>
                                             <td className="px-4 py-3">{client.paketTerbaru}</td>
                                             <td className="px-4 py-3 font-semibold">{formatCurrency(client.totalProyekValue)}</td>
@@ -1084,11 +1045,12 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                     {inactiveSectionOpen && (
                          <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-brand-text-secondary uppercase bg-brand-bg"><tr><th className="px-4 py-3">Nama</th><th className="px-4 py-3">Kontak</th><th className="px-4 py-3">Paket Terbaru</th><th className="px-4 py-3">Total Proyek</th><th className="px-4 py-3">Status Pembayaran</th><th className="px-4 py-3 text-center">Aksi</th></tr></thead>
+                                <thead className="text-xs text-brand-text-secondary uppercase bg-brand-bg"><tr><th className="px-4 py-3">Nama</th><th className="px-4 py-3">Jenis Klien</th><th className="px-4 py-3">Kontak</th><th className="px-4 py-3">Paket Terbaru</th><th className="px-4 py-3">Total Proyek</th><th className="px-4 py-3">Status Pembayaran</th><th className="px-4 py-3 text-center">Aksi</th></tr></thead>
                                 <tbody className="divide-y divide-brand-border">
                                     {inactiveClients.map(client => (
                                         <tr key={client.id} className="hover:bg-brand-bg">
                                             <td className="px-4 py-3 font-semibold text-brand-text-light">{client.name}</td>
+                                            <td className="px-4 py-3 text-brand-text-primary">{client.clientType}</td>
                                             <td className="px-4 py-3 text-brand-text-secondary">{client.email}<br/>{client.phone}</td>
                                             <td className="px-4 py-3">{client.paketTerbaru}</td>
                                             <td className="px-4 py-3 font-semibold">{formatCurrency(client.totalProyekValue)}</td>
@@ -1113,7 +1075,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                     onClose={() => setIsDetailModalOpen(false)}
                     onEditClient={(c) => handleOpenModal('edit', c, projects.find(p=>p.clientId===c.id))}
                     onDeleteClient={handleDeleteClient}
-                    onViewReceipt={(p) => { setClientForDetail(clientForDetail); setDocumentToView({type: 'receipt', project: p}) }}
+                    onViewReceipt={(t) => { setClientForDetail(clientForDetail); setDocumentToView({type: 'receipt', transaction: t}) }}
                     onViewInvoice={(p) => { setClientForDetail(clientForDetail); setDocumentToView({type: 'invoice', project: p}) }}
                     handleNavigation={handleNavigation}
                     onRecordPayment={handleRecordPayment}
@@ -1121,7 +1083,8 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                     onSharePortal={handleOpenQrModal}
                 />
             </Modal>
-            {documentToView && <Modal isOpen={!!documentToView} onClose={handleCloseModal} title={documentToView.type === 'invoice' ? `Invoice: ${documentToView.project.projectName}` : `Kwitansi: ${documentToView.project.projectName}`} size="4xl"><div className="printable-area">{renderDocumentBody()}</div><div className="mt-6 text-right non-printable space-x-2"><button type="button" onClick={() => setShowDigitalSignature(prev => !prev)} className="button-secondary inline-flex items-center gap-2"><QrCodeIcon className="w-4 h-4"/>{showDigitalSignature ? 'Sembunyikan' : 'Tambah'} Tanda Tangan Digital</button><button onClick={() => window.print()} className="button-primary inline-flex items-center gap-2"><PrinterIcon className="w-4 h-4"/>Cetak</button></div></Modal>}
+            {documentToView && <Modal isOpen={!!documentToView} onClose={handleCloseModal} title={documentToView.type === 'invoice' ? `Invoice: ${documentToView.project.projectName}` : `Kwitansi: ${documentToView.transaction.id}`} size="4xl"><div className="printable-area">{renderDocumentBody()}</div><div className="mt-6 text-right non-printable space-x-2"><button type="button" onClick={() => setIsSignatureModalOpen(true)} className="button-secondary">Tanda Tangan</button><button onClick={() => window.print()} className="button-primary inline-flex items-center gap-2"><PrinterIcon className="w-4 h-4"/>Cetak</button></div></Modal>}
+            {isSignatureModalOpen && <Modal isOpen={isSignatureModalOpen} onClose={() => setIsSignatureModalOpen(false)} title="Bubuhkan Tanda Tangan Anda"><SignaturePad onClose={() => setIsSignatureModalOpen(false)} onSave={handleSaveSignature} /></Modal>}
             {qrModalContent && (<Modal isOpen={!!qrModalContent} onClose={() => setQrModalContent(null)} title={qrModalContent.title} size="sm"><div className="text-center p-4"><div id="client-portal-qrcode" className="p-4 bg-white rounded-lg inline-block mx-auto"></div><p className="text-xs text-brand-text-secondary mt-4 break-all">{qrModalContent.url}</p><button onClick={() => { const canvas = document.querySelector('#client-portal-qrcode canvas') as HTMLCanvasElement; if(canvas){ const link = document.createElement('a'); link.download = 'client-portal-qr.png'; link.href = canvas.toDataURL(); link.click(); }}} className="mt-6 button-primary w-full">Unduh</button></div></Modal>)}
             {isBookingFormShareModalOpen && (
                 <Modal isOpen={isBookingFormShareModalOpen} onClose={() => setIsBookingFormShareModalOpen(false)} title="Bagikan Formulir Booking Publik" size="sm">
@@ -1155,7 +1118,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, projects, setPro
                             }
                             return acc;
                         }, {} as Record<string, number>);
-                        const sortedLocations = Object.entries(locationCounts).sort(([, a], [, b]) => Number(b) - Number(a));
+                        const sortedLocations = Object.entries(locationCounts).sort(([, a], [, b]) => b - a);
 
                         return (
                             <div className="space-y-3">

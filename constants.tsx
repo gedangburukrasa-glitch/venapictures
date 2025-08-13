@@ -1,9 +1,7 @@
 
 
-
-
 import React from 'react';
-import { ViewType, ProjectStatus, TransactionType, PaymentStatus, PocketType, ClientStatus, LeadStatus, ContactChannel, CardType, AssetStatus, PerformanceNoteType, SatisfactionLevel, RevisionStatus, FreelancerFeedback, Notification, QRCodeRecord, SocialMediaPost, PostType, PostStatus, PromoCode } from './types';
+import { ViewType, TransactionType, PaymentStatus, PocketType, ClientStatus, LeadStatus, ContactChannel, CardType, AssetStatus, PerformanceNoteType, SatisfactionLevel, RevisionStatus, Notification, SocialMediaPost, PostType, PostStatus, PromoCode, SOP, ClientType, ProjectStatusConfig } from './types';
 import type { User, Client, Project, Package, TeamMember, Transaction, FinancialPocket, AddOn, Profile, TeamProjectPayment, TeamPaymentRecord, AssignedTeamMember, Lead, NotificationSettings, SecuritySettings, RewardLedgerEntry, Card, Asset, PerformanceNote, ClientFeedback, Contract } from './types';
 
 // --- ICONS (NEW THEME) ---
@@ -51,7 +49,7 @@ export const PlusIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 );
 export const ChevronLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 18 15 12 9 6 15 6"/></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
 );
 export const ChevronRightIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -134,6 +132,9 @@ export const ArrowDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export const CheckSquareIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 );
+export const CheckCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+);
 export const ClockIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
@@ -176,25 +177,45 @@ export const PercentIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export const SendIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
 );
-
+export const BookOpenIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+);
+export const GalleryHorizontalIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3v18"/><path d="M22 3v18"/><path d="M6 12h12"/><path d="M6 3h12v3H6z"/><path d="M6 18h12v3H6z"/></svg>
+);
 
 
 // --- HELPERS ---
 // Utility functions used across multiple components.
-export const getProjectStatusColor = (status: ProjectStatus): string => {
-    switch (status) {
-        case ProjectStatus.COMPLETED: return '#10b981'; // emerald-500
-        case ProjectStatus.CONFIRMED: return '#3b82f6'; // blue-500
-        case ProjectStatus.EDITING: return '#8b5cf6'; // violet-500
-        case ProjectStatus.PRINTING: return '#f97316'; // orange-500
-        case ProjectStatus.PENDING: return '#eab308'; // yellow-500
-        case ProjectStatus.CANCELLED: return '#ef4444'; // red-500
-        case ProjectStatus.PREPARATION: return '#6366f1'; // indigo-500
-        case ProjectStatus.SHIPPED: return '#14b8a6'; // teal-500
-        default: return '#64748b'; // slate-500
-    }
-};
 
+export const CONTRACT_PLACEHOLDERS = [
+    { placeholder: '{{nomor_kontrak}}', description: 'Nomor unik kontrak.' },
+    { placeholder: '{{tanggal_ttd}}', description: 'Tanggal penandatanganan kontrak.' },
+    { placeholder: '{{lokasi_ttd}}', description: 'Lokasi penandatanganan kontrak.' },
+    { placeholder: '{{nama_perusahaan}}', description: 'Nama perusahaan Anda.' },
+    { placeholder: '{{alamat_perusahaan}}', description: 'Alamat perusahaan Anda.' },
+    { placeholder: '{{telepon_perusahaan}}', description: 'Telepon perusahaan Anda.' },
+    { placeholder: '{{nama_penandatangan_perusahaan}}', description: 'Nama penandatangan dari pihak Anda.' },
+    { placeholder: '{{nama_klien_1}}', description: 'Nama klien utama.' },
+    { placeholder: '{{alamat_klien_1}}', description: 'Alamat klien utama.' },
+    { placeholder: '{{telepon_klien_1}}', description: 'Telepon klien utama.' },
+    { placeholder: '{{nama_klien_2}}', description: 'Nama klien kedua (jika ada).' },
+    { placeholder: '{{alamat_klien_2}}', description: 'Alamat klien kedua (jika ada).' },
+    { placeholder: '{{telepon_klien_2}}', description: 'Telepon klien kedua (jika ada).' },
+    { placeholder: '{{nama_proyek}}', description: 'Nama proyek yang disepakati.' },
+    { placeholder: '{{tanggal_acara}}', description: 'Tanggal pelaksanaan acara.' },
+    { placeholder: '{{lokasi_acara}}', description: 'Lokasi pelaksanaan acara.' },
+    { placeholder: '{{nama_paket}}', description: 'Nama paket layanan yang dipilih.' },
+    { placeholder: '{{total_biaya}}', description: 'Total biaya proyek (termasuk PPN jika ada).' },
+    { placeholder: '{{jumlah_dp}}', description: 'Jumlah DP yang sudah atau akan dibayar.' },
+    { placeholder: '{{sisa_pembayaran}}', description: 'Sisa pembayaran yang harus dilunasi.' },
+    { placeholder: '{{tanggal_pelunasan}}', description: 'Batas akhir tanggal pelunasan.' },
+    { placeholder: '{{rekening_bank_perusahaan}}', description: 'Nomor rekening bank perusahaan Anda.' },
+    { placeholder: '{{detail_paket_fisik}}', description: 'Daftar rincian item fisik dari paket.' },
+    { placeholder: '{{detail_paket_digital}}', description: 'Daftar rincian item digital dari paket.' },
+    { placeholder: '{{detail_addon}}', description: 'Daftar rincian add-on yang dipilih.' },
+    { placeholder: '{{syarat_ketentuan}}', description: 'Syarat dan ketentuan umum dari profil Anda.' },
+];
 
 // --- NAVIGATION ---
 // Defines the items available in the main sidebar navigation.
@@ -211,211 +232,342 @@ export const NAV_ITEMS = [
   { view: ViewType.PROMO_CODES, label: 'Kode Promo', icon: PercentIcon },
   { view: ViewType.ASSETS, label: 'Manajemen Aset', icon: CameraIcon },
   { view: ViewType.CONTRACTS, label: 'Kontrak Kerja', icon: FileTextIcon },
-  { view: ViewType.QR_GENERATOR, label: 'QR Generator', icon: QrCodeIcon },
+  { view: ViewType.SOP, label: 'SOP', icon: BookOpenIcon },
   { view: ViewType.SOCIAL_MEDIA_PLANNER, label: 'Perencana Medsos', icon: Share2Icon },
   { view: ViewType.SETTINGS, label: 'Pengaturan', icon: SettingsIcon },
 ];
 
-// --- MOCK DATA (RESTRUCTURED & INTEGRATED) ---
+// --- MOCK DATA (RESTRUCTURED & INTEGRATED WITH UUIDs) ---
 // This section contains all the mock data to populate the application.
 // The data has been refactored for consistency, with transactions as the single source of truth for financial calculations.
-
-// --- Base Static Data ---
-export const MOCK_USERS: User[] = [
-    { id: 'USR_ADMIN', email: 'admin@venapictures.com', password: 'password123', fullName: 'Admin Vena', role: 'Admin' },
-    { 
-        id: 'USR_MEMBER_1', 
-        email: 'boceng@venapictures.com', 
-        password: 'password123', 
-        fullName: 'Boceng Staf', 
-        role: 'Member',
-        permissions: [
-            ViewType.DASHBOARD,
-            ViewType.PROSPEK,
-            ViewType.CLIENTS,
-            ViewType.PROJECTS,
-            ViewType.TEAM,
-            ViewType.CALENDAR,
-            ViewType.CLIENT_REPORTS,
-            ViewType.PACKAGES,
-            ViewType.PROMO_CODES,
-            ViewType.ASSETS,
-            ViewType.CONTRACTS,
-            ViewType.QR_GENERATOR,
-            ViewType.SOCIAL_MEDIA_PLANNER,
-        ]
-    }
-];
-
-export const MOCK_USER_PROFILE: Profile = {
-    fullName: "Admin Vena",
-    email: "admin@venapictures.com",
-    phone: "081234567890",
-    companyName: "Vena Pictures",
-    website: "https://venapictures.com",
-    address: "Jl. Raya Fotografi No. 123, Jakarta, Indonesia",
-    bankAccount: "BCA 1234567890 a/n Vena Pictures",
-    authorizedSigner: "Vena Pictures Management",
-    idNumber: "3171234567890001",
-    bio: "Vendor fotografi pernikahan profesional dengan spesialisasi pada momen-momen otentik dan sinematik.",
-    incomeCategories: ["DP Proyek", "Pelunasan Proyek", "Penjualan Album", "Sewa Alat", "Lain-lain"],
-    expenseCategories: ["Gaji Freelancer", "Hadiah Freelancer", "Penarikan Hadiah Freelancer", "Sewa Tempat", "Transportasi", "Konsumsi", "Marketing", "Sewa Alat", "Cetak Album", "Operasional Kantor", "Transfer Internal", "Penutupan Anggaran"],
-    projectTypes: ["Pernikahan", "Pre-wedding", "Lamaran", "Acara Korporat", "Ulang Tahun"],
-    eventTypes: ["Meeting Klien", "Survey Lokasi", "Libur", "Workshop", "Lainnya"],
-    assetCategories: ["Kamera", "Lensa", "Drone", "Lighting", "Audio", "Tripod & Stabilizer", "Lainnya"],
-    notificationSettings: {
-        newProject: true,
-        paymentConfirmation: true,
-        deadlineReminder: true,
-    },
-    securitySettings: {
-        twoFactorEnabled: false,
-    },
-    briefingTemplate: "Tim terbaik! Mari berikan yang terbaik untuk klien kita. Jaga semangat, komunikasi, dan fokus pada detail. Let's create magic!"
-};
 
 const createMockDate = (monthOffset: number, day: number) => {
     const date = new Date();
     date.setMonth(date.getMonth() + monthOffset);
     date.setDate(day);
+    date.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
     return date.toISOString().split('T')[0];
 };
 
-export const MOCK_PACKAGES: Package[] = [
-    { id: 'PKG001', name: 'Paket Silver', price: 15000000, description: '2 Fotografer, 1 Videografer, Album Cetak, 8 Jam Liputan' },
-    { id: 'PKG002', name: 'Paket Gold', price: 25000000, description: '2 Fotografer, 2 Videografer, Album Cetak Premium, Same Day Edit, 10 Jam Liputan' },
-    { id: 'PKG003', name: 'Paket Platinum', price: 40000000, description: '3 Fotografer, 3 Videografer, Album Kustom, SDE, Drone, 12 Jam Liputan' },
-];
+// --- UUIDs for all entities ---
+const user_ids = { admin: 'a1a1a1a1-1111-4111-8111-111111111111', member: 'a2a2a2a2-2222-4222-8222-222222222222' };
+const client_ids = {
+    andi: 'c11e4775-339c-4545-9783-d562b3d3b733', budi: 'c21e4775-339c-4545-9783-d562b3d3b734',
+    citra: 'c31e4775-339c-4545-9783-d562b3d3b735', fajar: 'c41e4775-339c-4545-9783-d562b3d3b736',
+    eko: 'c51e4775-339c-4545-9783-d562b3d3b737', gita: 'c61e4775-339c-4545-9783-d562b3d3b738',
+    hendra: 'c71e4775-339c-4545-9783-d562b3d3b739', indah: 'c81e4775-339c-4545-9783-d562b3d3b73a'
+};
+const team_member_ids = {
+    bambang: 'f11e4775-339c-4545-9783-d562b3d3b741', siti: 'f21e4775-339c-4545-9783-d562b3d3b742',
+    rahmat: 'f31e4775-339c-4545-9783-d562b3d3b743', dewi: 'f41e4775-339c-4545-9783-d562b3d3b744',
+    agung: 'f51e4775-339c-4545-9783-d562b3d3b745'
+};
+const package_ids = {
+    ruby: 'p11e4775-339c-4545-9783-d562b3d3b751', sapphire: 'p21e4775-339c-4545-9783-d562b3d3b752',
+    emerald: 'p31e4775-339c-4545-9783-d562b3d3b753', engagement: 'p41e4775-339c-4545-9783-d562b3d3b754',
+    prewedding: 'p51e4775-339c-4545-9783-d562b3d3b755'
+};
+const addon_ids = { sde: 'a11e4775-339c-4545-9783-d562b3d3b761', drone: 'a21e4775-339c-4545-9783-d562b3d3b762', canvas: 'a31e4775-339c-4545-9783-d562b3d3b763', extra_hour: 'a41e4775-339c-4545-9783-d562b3d3b764' };
+const card_ids = { wbank1: 'd11e4775-339c-4545-9783-d562b3d3b771', wbank2: 'd21e4775-339c-4545-9783-d562b3d3b772', visa: 'd31e4775-339c-4545-9783-d562b3d3b773', cash: 'd41e4775-339c-4545-9783-d562b3d3b774' };
+const pocket_ids = { emergency: 'e11e4775-339c-4545-9783-d562b3d3b781', camera: 'e21e4775-339c-4545-9783-d562b3d3b782', operational: 'e31e4775-339c-4545-9783-d562b3d3b783', reward_pool: 'e41e4775-339c-4545-9783-d562b3d3b784' };
+const project_ids = {
+    p1: 'b11e4775-339c-4545-9783-d562b3d3b791', p2: 'b21e4775-339c-4545-9783-d562b3d3b792',
+    p3: 'b31e4775-339c-4545-9783-d562b3d3b793', p4: 'b41e4775-339c-4545-9783-d562b3d3b794',
+    p5: 'b51e4775-339c-4545-9783-d562b3d3b795', p6: 'b61e4775-339c-4545-9783-d562b3d3b796',
+    p7: 'b71e4775-339c-4545-9783-d562b3d3b797', p8: 'b81e4775-339c-4545-9783-d562b3d3b798',
+    p9: 'b91e4775-339c-4545-9783-d562b3d3b799', p10: 'ba1e4775-339c-4545-9783-d562b3d3b79a',
+    p11: 'bb1e4775-339c-4545-9783-d562b3d3b79b', p12: 'bc1e4775-339c-4545-9783-d562b3d3b79c'
+};
 
-export const MOCK_ADDONS: AddOn[] = [
-    { id: 'ADD001', name: 'Same Day Edit Video', price: 3500000 },
-    { id: 'ADD002', name: 'Sewa Drone', price: 2000000 },
-    { id: 'ADD003', name: 'Cetak Kanvas 60x40', price: 750000 },
-    { id: 'ADD004', name: 'Jam Liputan Tambahan', price: 1000000 },
-];
-
-export const MOCK_QR_CODES: QRCodeRecord[] = [
-    {
-        id: 'QR001',
-        name: 'Tanda Tangan Digital Resmi',
-        type: 'text',
-        content: 'Digitally Signed and Verified by Vena Pictures Management.',
+// --- Base Static Data ---
+export const MOCK_USERS: User[] = [
+    { id: user_ids.admin, email: 'admin@venapictures.com', password: 'password123', fullName: 'Admin Vena', role: 'Admin' },
+    { 
+        id: user_ids.member, 
+        email: 'boceng@venapictures.com', 
+        password: 'password123', 
+        fullName: 'Boceng Staf', 
+        role: 'Member',
+        permissions: [
+            ViewType.DASHBOARD, ViewType.PROSPEK, ViewType.CLIENTS, ViewType.PROJECTS, ViewType.TEAM,
+            ViewType.CALENDAR, ViewType.PACKAGES, ViewType.ASSETS, ViewType.CONTRACTS, ViewType.SOP,
+            ViewType.SOCIAL_MEDIA_PLANNER
+        ]
     }
 ];
 
+export const MOCK_USER_PROFILE: Profile = {
+    fullName: "Admin Vena", email: "admin@venapictures.com", phone: "081234567890",
+    companyName: "Vena Pictures", website: "https://venapictures.com", address: "Jl. Raya Fotografi No. 123, Jakarta, Indonesia",
+    bankAccount: "BCA 1234567890 a/n Vena Pictures", authorizedSigner: "Vena Pictures Management", idNumber: "3171234567890001",
+    bio: "Vendor fotografi pernikahan profesional dengan spesialisasi pada momen-momen otentik dan sinematik.",
+    incomeCategories: ["DP Proyek", "Pelunasan Proyek", "Penjualan Album", "Sewa Alat", "Lain-lain", "Modal"],
+    expenseCategories: ["Gaji Freelancer", "Hadiah Freelancer", "Penarikan Hadiah Freelancer", "Sewa Tempat", "Transportasi", "Konsumsi", "Marketing", "Sewa Alat", "Cetak Album", "Cetak Foto", "Flashdisk", "Custom", "Operasional Kantor", "Transfer Internal", "Penutupan Anggaran"],
+    projectTypes: ["Pernikahan", "Pre-wedding", "Lamaran", "Acara Korporat", "Ulang Tahun"],
+    eventTypes: ["Meeting Klien", "Survey Lokasi", "Libur", "Workshop", "Lainnya"],
+    assetCategories: ["Kamera", "Lensa", "Drone", "Lighting", "Audio", "Tripod & Stabilizer", "Lainnya"],
+    sopCategories: ["Fotografi", "Videografi", "Editing", "Umum", "Layanan Klien"],
+    projectStatusConfig: [
+        { id: 'status_1', name: 'Tertunda', color: '#eab308', subStatuses: [{ name: 'Menunggu DP', note: 'Klien belum melakukan pembayaran uang muka.'}, { name: 'Jadwal Bentrok', note: 'Perlu koordinasi ulang jadwal dengan klien atau tim.'}], note: 'Proyek yang masih menunggu konfirmasi pembayaran atau penjadwalan ulang.' },
+        { id: 'status_3', name: 'Dikonfirmasi', color: '#3b82f6', subStatuses: [{ name: 'DP Lunas', note: 'Uang muka sudah diterima.'}, { name: 'Kontrak Ditandatangani', note: 'Dokumen kontrak sudah disetujui kedua belah pihak.'}], note: 'Proyek siap dieksekusi.' },
+        { id: 'status_2', name: 'Persiapan', color: '#6366f1', subStatuses: [{ name: 'Briefing Tim', note: 'Pastikan semua anggota tim memahami rundown dan tugas.'}, { name: 'Survey Lokasi', note: 'Kunjungi lokasi acara untuk perencanaan teknis.'}, { name: 'Cek Peralatan', note: 'Pastikan semua gear dalam kondisi prima dan baterai penuh.'}], note: 'Tahap persiapan sebelum hari H acara.' },
+        { id: 'status_4', name: 'Editing', color: '#8b5cf6', subStatuses: [{ name: 'Seleksi Foto', note: 'Memilih foto-foto terbaik dari acara.'}, { name: 'Editing Foto', note: 'Proses color grading dan retouching foto.'}, { name: 'Editing Video', note: 'Menyusun klip video menjadi satu kesatuan cerita.'}, { name: 'Color Grading', note: 'Menyesuaikan warna video agar sinematik.'}], note: 'Proses pasca-produksi sedang berjalan.' },
+        { id: 'status_5', name: 'Revisi', color: '#14b8a6', subStatuses: [{ name: 'Revisi Klien 1', note: 'Menerima dan mengerjakan masukan revisi dari klien.'}, { name: 'Revisi Internal', note: 'Pengecekan kualitas internal sebelum finalisasi.'}, { name: 'Finalisasi', note: 'Menyelesaikan sentuhan akhir setelah semua revisi.'}], note: 'Tahap revisi berdasarkan masukan klien atau internal.' },
+        { id: 'status_6', name: 'Cetak', color: '#f97316', subStatuses: [{ name: 'Layouting Album', note: 'Menyusun tata letak foto pada album.'}, { name: 'Proses Cetak', note: 'File dikirim ke percetakan.'}, { name: 'Quality Control', note: 'Memeriksa hasil cetakan untuk memastikan kualitas.'}], note: 'Proses pencetakan item fisik.' },
+        { id: 'status_7', name: 'Dikirim', color: '#06b6d4', subStatuses: [{ name: 'Packing', note: 'Mengemas hasil fisik dengan aman.'}, { name: 'Dalam Pengiriman', note: 'Paket sudah diserahkan ke kurir.'}], note: 'Hasil fisik sedang dalam perjalanan ke klien.' },
+        { id: 'status_8', name: 'Selesai', color: '#10b981', subStatuses: [], note: 'Proyek telah selesai dan semua hasil telah diterima klien.' },
+        { id: 'status_9', name: 'Dibatalkan', color: '#ef4444', subStatuses: [], note: 'Proyek dibatalkan oleh klien atau vendor.' },
+    ],
+    notificationSettings: { newProject: true, paymentConfirmation: true, deadlineReminder: true },
+    securitySettings: { twoFactorEnabled: false },
+    briefingTemplate: "Tim terbaik! Mari berikan yang terbaik untuk klien kita. Jaga semangat, komunikasi, dan fokus pada detail. Let's create magic!",
+    termsAndConditions: `📜 Syarat & Ketentuan Umum
+
+Pemesanan & Pembayaran:
+- Pemesanan dianggap sah setelah pembayaran Uang Muka (DP) sebesar 50% dari total biaya.
+- Pelunasan sisa pembayaran wajib dilakukan paling lambat 3 (tiga) hari sebelum tanggal acara.
+- Semua pembayaran dilakukan melalui transfer ke rekening yang tertera pada invoice.
+
+📅 Jadwal & Waktu Kerja
+- Durasi kerja tim sesuai dengan detail yang tertera pada paket yang dipilih.
+- Penambahan jam kerja akan dikenakan biaya tambahan per jam.
+- Klien wajib memberikan rundown acara yang jelas kepada tim paling lambat 7 (tujuh) hari sebelum acara.
+
+📦 Penyerahan Hasil
+- Hasil akhir (foto edit, video, album) akan diserahkan dalam kurun waktu yang tertera pada paket (misal: 30-60 hari kerja).
+- Hari kerja tidak termasuk hari Sabtu, Minggu, dan hari libur nasional.
+- File mentah (RAW) tidak diberikan kepada klien.
+- Hasil digital akan diberikan melalui tautan Google Drive.
+
+➕ Revisi
+- Klien berhak mendapatkan 1 (satu) kali revisi minor untuk hasil video (misal: penggantian lagu, pemotongan klip).
+- Revisi mayor (perubahan konsep total) akan dikenakan biaya tambahan.
+- Revisi tidak berlaku untuk hasil foto, kecuali terdapat kesalahan teknis fatal dari pihak fotografer.
+
+❌ Pembatalan
+- Jika pembatalan dilakukan oleh klien, Uang Muka (DP) yang telah dibayarkan tidak dapat dikembalikan.
+- Jika pembatalan dilakukan oleh pihak Vena Pictures, seluruh pembayaran yang telah diterima akan dikembalikan 100%.
+
+Lain-lain:
+- Vena Pictures tidak bertanggung jawab atas kegagalan pelaksanaan acara yang disebabkan oleh kejadian di luar kendali (bencana alam, kerusuhan, dll.).
+- Jika terjadi kerusakan alat yang tidak disengaja, Vena Pictures akan memberikan kompensasi sesuai dengan kesepakatan bersama.
+- Hak cipta hasil foto dan video tetap menjadi milik Vena Pictures.
+- Vena Pictures berhak menggunakan hasil karya untuk kepentingan portofolio dan promosi di media sosial atau website, kecuali jika ada perjanjian tertulis sebelumnya dengan klien.`,
+    contractTemplate: `SURAT PERJANJIAN KERJA SAMA
+JASA FOTOGRAFI & VIDEOGRAFI
+Nomor: {{nomor_kontrak}}
+
+Pada hari ini, {{tanggal_ttd}}, bertempat di {{lokasi_ttd}}, telah dibuat dan disepakati perjanjian kerja sama antara:
+
+PIHAK PERTAMA
+Nama           : {{nama_penandatangan_perusahaan}}
+Jabatan        : Pemilik Usaha
+Perusahaan     : {{nama_perusahaan}}
+Alamat         : {{alamat_perusahaan}}
+Nomor Telepon  : {{telepon_perusahaan}}
+
+PIHAK KEDUA
+Nama           : {{nama_klien_1}}
+Alamat         : {{alamat_klien_1}}
+Nomor Telepon  : {{telepon_klien_1}}
+
+(Jika ada, Pihak Kedua Tambahan)
+Nama           : {{nama_klien_2}}
+Alamat         : {{alamat_klien_2}}
+Nomor Telepon  : {{telepon_klien_2}}
+
+Kedua belah pihak sepakat untuk mengikatkan diri dalam perjanjian ini dengan syarat dan ketentuan sebagai berikut:
+
+PASAL 1: RUANG LINGKUP PEKERJAAN
+PIHAK PERTAMA akan memberikan jasa fotografi dan/atau videografi untuk acara {{nama_proyek}} pada tanggal {{tanggal_acara}} di lokasi {{lokasi_acara}}.
+Detail layanan yang diberikan sesuai dengan paket {{nama_paket}} dan item tambahan sebagai berikut:
+- Item Fisik: {{detail_paket_fisik}}
+- Item Digital: {{detail_paket_digital}}
+- Add-On: {{detail_addon}}
+
+PASAL 2: BIAYA DAN CARA PEMBAYARAN
+Total biaya jasa adalah sebesar {{total_biaya}}.
+Pembayaran dilakukan dengan sistem:
+1. Uang Muka (DP) sebesar {{jumlah_dp}} dibayarkan pada saat penandatanganan kontrak.
+2. Pelunasan sebesar {{sisa_pembayaran}} dibayarkan paling lambat pada tanggal {{tanggal_pelunasan}}.
+Pembayaran ditransfer ke rekening: {{rekening_bank_perusahaan}}.
+
+PASAL 3: HAK DAN KEWAJIBAN
+Hak dan kewajiban kedua belah pihak diatur dalam Syarat & Ketentuan Umum yang merupakan bagian tidak terpisahkan dari perjanjian ini.
+
+PASAL 4: PEMBATALAN
+Kebijakan pembatalan diatur dalam Syarat & Ketentuan Umum. Silakan merujuk ke dokumen tersebut.
+
+PASAL 5: PENYELESAIAN SENGKETA
+Segala sengketa yang timbul akan diselesaikan secara musyawarah.
+
+Demikian surat perjanjian ini dibuat dan ditandatangani oleh kedua belah pihak.
+
+
+PIHAK PERTAMA,
+
+
+
+
+( {{nama_penandatangan_perusahaan}} )
+
+
+PIHAK KEDUA,
+
+
+
+
+( {{nama_klien_1}} )
+`
+};
+
+export const MOCK_SOPS: SOP[] = [
+    { id: 'b1b1b1b1-1111-4111-8111-111111111111', title: 'SOP Fotografi Acara Pernikahan', category: 'Fotografi', content: `# SOP Fotografi Acara Pernikahan... (Content unchanged)`, lastUpdated: createMockDate(-5, 1) },
+    { id: 'b2b2b2b2-2222-4222-8222-222222222222', title: 'SOP Editing Tone Warna Cinematic', category: 'Editing', content: `# SOP Editing Tone Warna Cinematic... (Content unchanged)`, lastUpdated: createMockDate(-10, 1) },
+    { id: 'b3b3b3b3-3333-4333-8333-333333333333', title: 'Prosedur Follow Up Klien', category: 'Layanan Klien', content: `# Prosedur Follow Up Klien\n\n1.  **Follow Up Awal (H+2):** Kirim pesan terima kasih setelah diskusi awal.\n2.  **Follow Up Kedua (H+7):** Tanyakan apakah ada pertanyaan lebih lanjut mengenai penawaran.\n3.  **Follow Up Terakhir (H+14):** Berikan informasi promo atau penawaran khusus jika ada.`, lastUpdated: createMockDate(-2, 5) },
+];
+
+export const MOCK_PACKAGES: Package[] = [
+    { id: package_ids.ruby, name: 'Paket Ruby', price: 12000000, photographers: '2 Fotografer', videographers: '1 Videografer', physicalItems: [{ name: '1 Album (20x30 cm, 20 halaman)', price: 800000 }], digitalItems: ['300 Foto Edit', 'Video Teaser 1 Menit', 'Semua File (Link Drive)'], processingTime: '30 hari kerja', defaultPrintingCost: 800000, defaultTransportCost: 500000 },
+    { id: package_ids.sapphire, name: 'Paket Sapphire', price: 18500000, photographers: '2 Fotografer', videographers: '2 Videografer', physicalItems: [{ name: '1 Album (20x30 cm, 20 halaman, Box)', price: 1200000 }, { name: 'Cetak 4R (20 lembar + Box)', price: 300000 }], digitalItems: ['400 Foto Edit', 'Video Teaser 1 Menit', '3 Menit Cinematic Clip', 'Semua File (USB)'], processingTime: '45 hari kerja', defaultPrintingCost: 1500000, defaultTransportCost: 750000 },
+    { id: package_ids.emerald, name: 'Paket Emerald', price: 28000000, photographers: '3 Fotografer', videographers: '2 Videografer', physicalItems: [{ name: '1 Album Magazine (30x30 cm, 40 halaman, Box)', price: 2500000 }, { name: 'Cetak 40x60 cm (1 lembar)', price: 750000 }, { name: 'Cetak 4R (40 lembar + Box)', price: 500000 }], digitalItems: ['500 Foto Edit', 'Video Teaser 1 Menit', '5 Menit Cinematic Clip', 'Semua File (USB)'], processingTime: '60 hari kerja', defaultPrintingCost: 3750000, defaultTransportCost: 1000000 },
+    { id: package_ids.engagement, name: 'Paket Engagement Simple', price: 5000000, photographers: '1 Fotografer', videographers: '1 Videografer', physicalItems: [], digitalItems: ['200 Foto Edit', 'Video Teaser 1 Menit', 'Semua File (Link Drive)'], processingTime: '21 hari kerja', defaultPrintingCost: 0, defaultTransportCost: 400000 },
+    { id: package_ids.prewedding, name: 'Paket Prewedding Classic', price: 7500000, photographers: '2 Fotografer', videographers: '1 Videografer', physicalItems: [{ name: 'Cetak 40x60 cm (2 lembar)', price: 1500000 }], digitalItems: ['150 Foto Edit', 'Video Prewedding 1 Menit', 'Semua File (Link Drive)'], processingTime: '21 hari kerja', defaultPrintingCost: 1500000, defaultTransportCost: 1000000 }
+];
+
+export const MOCK_ADDONS: AddOn[] = [
+    { id: addon_ids.sde, name: 'Same Day Edit Video', price: 3500000 },
+    { id: addon_ids.drone, name: 'Sewa Drone', price: 2000000 },
+    { id: addon_ids.canvas, name: 'Cetak Kanvas 60x40', price: 750000 },
+    { id: addon_ids.extra_hour, name: 'Jam Liputan Tambahan', price: 1000000 },
+];
+
 export const MOCK_PROMO_CODES: PromoCode[] = [
-    { id: 'PROMO001', code: 'VENA10', discountType: 'percentage', discountValue: 10, isActive: true, usageCount: 2, maxUsage: 10, expiryDate: createMockDate(3, 1), createdAt: createMockDate(-1, 1) },
-    { id: 'PROMO002', code: 'DISKON500K', discountType: 'fixed', discountValue: 500000, isActive: true, usageCount: 0, maxUsage: null, expiryDate: null, createdAt: createMockDate(-2, 1) },
-    { id: 'PROMO003', code: 'EXPIRED', discountType: 'percentage', discountValue: 15, isActive: false, usageCount: 5, maxUsage: 5, expiryDate: createMockDate(-1, 1), createdAt: createMockDate(-6, 1) },
+    { id: 'e1e1e1e1-1111-4111-8111-111111111111', code: 'VENA10', discountType: 'percentage', discountValue: 10, isActive: true, usageCount: 2, maxUsage: 10, expiryDate: createMockDate(3, 1), createdAt: createMockDate(-1, 1) },
+    { id: 'e2e2e2e2-2222-4222-8222-222222222222', code: 'DISKON500K', discountType: 'fixed', discountValue: 500000, isActive: true, usageCount: 1, maxUsage: null, expiryDate: null, createdAt: createMockDate(-2, 1) },
+    { id: 'e3e3e3e3-3333-4333-8333-333333333333', code: 'EXPIRED', discountType: 'percentage', discountValue: 15, isActive: false, usageCount: 5, maxUsage: 5, expiryDate: createMockDate(-1, 1), createdAt: createMockDate(-6, 1) },
 ];
 
 
 // --- Core Entities (The base for our data story) ---
 export const MOCK_CLIENTS: Client[] = [
-  { id: 'CLI001', name: 'Andi & Siska', email: 'andi.siska@email.com', phone: '081111111111', since: createMockDate(-1, 15), instagram: '@andisiska', status: ClientStatus.ACTIVE, lastContact: createMockDate(0, -5), portalAccessId: 'a7c5b8e1-4f2a-4f9c-8b1e-3e1f7c8b4a9c' },
-  { id: 'CLI002', name: 'Budi Santoso', email: 'budi.s@email.com', phone: '082222222222', since: createMockDate(-3, 20), instagram: '@budisan', status: ClientStatus.INACTIVE, lastContact: createMockDate(0, -40), portalAccessId: 'f3b9c1d8-6e5a-4b2a-9c8d-1e7a6b5c4d3e' },
-  { id: 'CLI003', name: 'Citra Lestari', email: 'citra.l@email.com', phone: '083333333333', since: createMockDate(-2, 5), instagram: '@citralestari', status: ClientStatus.INACTIVE, lastContact: createMockDate(0, -10), portalAccessId: 'b9e8c7d6-3a2b-4c1d-8e7f-6a5b4c3d2e1f' },
-  { id: 'CLI004', name: 'Fajar Nugraha', email: 'fajar.n@email.com', phone: '084444444444', since: createMockDate(0, -2), instagram: '@fajarnugraha', status: ClientStatus.ACTIVE, lastContact: createMockDate(0, -1), portalAccessId: 'd1e2f3a4-5b6c-4d7e-8f9a-0b1c2d3e4f5a' },
-  { id: 'CLI005', name: 'Eko Prasetyo', email: 'eko.p@email.com', phone: '085555555555', since: createMockDate(0, -12), instagram: '@ekopras', status: ClientStatus.ACTIVE, lastContact: createMockDate(0, -2), portalAccessId: 'c6b7d8e9-1a2b-4c5d-8e9f-0a1b2c3d4e5f' },
+  { id: client_ids.andi, name: 'Andi & Siska', email: 'andi.siska@email.com', phone: '081111111111', since: createMockDate(-1, 15), instagram: '@andisiska', status: ClientStatus.ACTIVE, clientType: ClientType.DIRECT, lastContact: createMockDate(0, -5), portalAccessId: 'a7c5b8e1-4f2a-4f9c-8b1e-3e1f7c8b4a9c' },
+  { id: client_ids.budi, name: 'Budi Santoso (WO)', email: 'budi.s@email.com', phone: '082222222222', since: createMockDate(-3, 20), instagram: '@budisan', status: ClientStatus.INACTIVE, clientType: ClientType.VENDOR, lastContact: createMockDate(0, -40), portalAccessId: 'f3b9c1d8-6e5a-4b2a-9c8d-1e7a6b5c4d3e' },
+  { id: client_ids.citra, name: 'Citra Lestari', email: 'citra.l@email.com', phone: '083333333333', since: createMockDate(-2, 5), instagram: '@citralestari', status: ClientStatus.ACTIVE, clientType: ClientType.DIRECT, lastContact: createMockDate(0, -10), portalAccessId: 'b9e8c7d6-3a2b-4c1d-8e7f-6a5b4c3d2e1f' },
+  { id: client_ids.fajar, name: 'Fajar Nugraha', email: 'fajar.n@email.com', phone: '084444444444', since: createMockDate(0, -2), instagram: '@fajarnugraha', status: ClientStatus.ACTIVE, clientType: ClientType.DIRECT, lastContact: createMockDate(0, -1), portalAccessId: 'd1e2f3a4-5b6c-4d7e-8f9a-0b1c2d3e4f5a' },
+  { id: client_ids.eko, name: 'Eko Prasetyo', email: 'eko.p@email.com', phone: '085555555555', since: createMockDate(0, -12), instagram: '@ekopras', status: ClientStatus.ACTIVE, clientType: ClientType.DIRECT, lastContact: createMockDate(0, -2), portalAccessId: 'c6b7d8e9-1a2b-4c5d-8e9f-0a1b2c3d4e5f' },
+  { id: client_ids.gita, name: 'Gita Permata', email: 'gita.p@email.com', phone: '086666666666', since: createMockDate(-1, 28), instagram: '@gitapermata', status: ClientStatus.ACTIVE, clientType: ClientType.DIRECT, lastContact: createMockDate(0, -18), portalAccessId: 'e9f0a1b2-c3d4-4e5f-8a9b-0c1d2e3f4a5b' },
+  { id: client_ids.hendra, name: 'Hendra Wijaya (EO)', email: 'hendra.w@email.com', phone: '087777777777', since: createMockDate(-4, 10), instagram: '@hendraeo', status: ClientStatus.ACTIVE, clientType: ClientType.VENDOR, lastContact: createMockDate(0, -3), portalAccessId: 'f0a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c' },
+  { id: client_ids.indah, name: 'Indah Sari', email: 'indah.s@email.com', phone: '088888888888', since: createMockDate(-5, 1), instagram: '@indahsari', status: ClientStatus.LOST, clientType: ClientType.DIRECT, lastContact: createMockDate(-4, 1), portalAccessId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d' },
 ];
 
 export const MOCK_LEADS: Lead[] = [
-  { id: 'LEAD001', name: 'Fajar Nugraha', contactChannel: ContactChannel.INSTAGRAM, location: 'Jakarta', status: LeadStatus.CONVERTED, date: createMockDate(0, -2), notes: 'Converted to client CLI004' },
-  { id: 'LEAD002', name: 'Gita Permata', contactChannel: ContactChannel.WHATSAPP, location: 'Bandung', status: LeadStatus.DISCUSSION, date: createMockDate(0, -5) },
-  { id: 'LEAD003', name: 'Hendra Wijaya', contactChannel: ContactChannel.REFERRAL, location: 'Surabaya', status: LeadStatus.FOLLOW_UP, date: createMockDate(0, -8) },
-  { id: 'LEAD004', name: 'Indah Sari', contactChannel: ContactChannel.WEBSITE, location: 'Jakarta', status: LeadStatus.REJECTED, date: createMockDate(-1, 15) },
+  { id: '10000000-0000-4000-8000-000000000001', name: 'Fajar Nugraha', contactChannel: ContactChannel.INSTAGRAM, location: 'Jakarta', status: LeadStatus.CONVERTED, date: createMockDate(0, -2), notes: `Converted to client ${client_ids.fajar}` },
+  { id: '10000000-0000-4000-8000-000000000002', name: 'Gita Permata', contactChannel: ContactChannel.WHATSAPP, location: 'Bandung', status: LeadStatus.CONVERTED, date: createMockDate(0, -25), notes: `Converted to client ${client_ids.gita}` },
+  { id: '10000000-0000-4000-8000-000000000003', name: 'Hendra Wijaya', contactChannel: ContactChannel.REFERRAL, location: 'Surabaya', status: LeadStatus.CONVERTED, date: createMockDate(0, -18), notes: `Converted to client ${client_ids.hendra}` },
+  { id: '10000000-0000-4000-8000-000000000004', name: 'Indah Sari', contactChannel: ContactChannel.WEBSITE, location: 'Jakarta', status: LeadStatus.REJECTED, date: createMockDate(-1, 15) },
+  { id: '10000000-0000-4000-8000-000000000005', name: 'Joko Anwar', contactChannel: ContactChannel.WHATSAPP, location: 'Yogyakarta', status: LeadStatus.DISCUSSION, date: createMockDate(0, -3) },
+  { id: '10000000-0000-4000-8000-000000000006', name: 'Kartika Dewi', contactChannel: ContactChannel.INSTAGRAM, location: 'Semarang', status: LeadStatus.FOLLOW_UP, date: createMockDate(0, -10) },
+  { id: '10000000-0000-4000-8000-000000000007', name: 'Lia Aminah', contactChannel: ContactChannel.WEBSITE, location: 'Jakarta', status: LeadStatus.DISCUSSION, date: createMockDate(0, -1) },
+  { id: '10000000-0000-4000-8000-000000000008', name: 'Maya Putri', contactChannel: ContactChannel.REFERRAL, location: 'Bandung', status: LeadStatus.DISCUSSION, date: createMockDate(0, 0) },
 ];
 
 let teamMembersData: TeamMember[] = [
-  { id: 'TM001', name: 'Bambang Sudiro', role: 'Fotografer', email: 'bambang@photographer.com', phone: '081211112222', standardFee: 1500000, noRek: 'BCA 1234567890', rewardBalance: 0, rating: 5, performanceNotes: [
-      { id: 'PN001', date: createMockDate(-1, 15), type: PerformanceNoteType.PRAISE, note: 'Komunikasi sangat baik dengan klien di proyek Andi & Siska.' },
-  ], portalAccessId: 'a1b2c3d4-freelancer-bambang'},
-  { id: 'TM002', name: 'Siti Aminah', role: 'Fotografer', email: 'siti@photographer.com', phone: '081233334444', standardFee: 1500000, noRek: 'Mandiri 0987654321', rewardBalance: 0, rating: 4, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-siti' },
-  { id: 'TM003', name: 'Rahmat Hidayat', role: 'Videografer', email: 'rahmat@videographer.com', phone: '081255556666', standardFee: 2000000, noRek: 'BRI 1122334455', rewardBalance: 0, rating: 3, performanceNotes: [
-      { id: 'PN003', date: createMockDate(-2, 20), type: PerformanceNoteType.LATE_DEADLINE, note: 'Terlambat 2 hari dalam pengiriman file mentah untuk proyek Budi.' },
-  ], portalAccessId: 'a1b2c3d4-freelancer-rahmat' },
-  { id: 'TM004', name: 'Dewi Anjani', role: 'Editor', email: 'dewi@editor.com', phone: '081277778888', standardFee: 1000000, noRek: 'BCA 9876543210', rewardBalance: 0, rating: 5, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-dewi' },
-  { id: 'TM005', name: 'Agung Perkasa', role: 'Videografer', email: 'agung@videographer.com', phone: '081299990000', standardFee: 2000000, noRek: 'BNI 5544332211', rewardBalance: 0, rating: 4, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-agung' },
+  { id: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', email: 'bambang@photographer.com', phone: '081211112222', standardFee: 1500000, noRek: 'BCA 1234567890', rewardBalance: 0, rating: 5, performanceNotes: [{ id: 'b1111111-aaaa-4aaa-8aaa-111111111111', date: createMockDate(-1, 15), type: PerformanceNoteType.PRAISE, note: 'Komunikasi sangat baik dengan klien di proyek Andi & Siska.' }], portalAccessId: 'a1b2c3d4-freelancer-bambang'},
+  { id: team_member_ids.siti, name: 'Siti Aminah', role: 'Fotografer', email: 'siti@photographer.com', phone: '081233334444', standardFee: 1500000, noRek: 'Mandiri 0987654321', rewardBalance: 0, rating: 4.5, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-siti' },
+  { id: team_member_ids.rahmat, name: 'Rahmat Hidayat', role: 'Videografer', email: 'rahmat@videographer.com', phone: '081255556666', standardFee: 2000000, noRek: 'BRI 1122334455', rewardBalance: 0, rating: 4, performanceNotes: [{ id: 'b3333333-cccc-4ccc-8ccc-333333333333', date: createMockDate(-2, 20), type: PerformanceNoteType.LATE_DEADLINE, note: 'Terlambat 2 hari dalam pengiriman file mentah untuk proyek Budi.' }], portalAccessId: 'a1b2c3d4-freelancer-rahmat' },
+  { id: team_member_ids.dewi, name: 'Dewi Anjani', role: 'Editor', email: 'dewi@editor.com', phone: '081277778888', standardFee: 1000000, noRek: 'BCA 9876543210', rewardBalance: 0, rating: 5, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-dewi' },
+  { id: team_member_ids.agung, name: 'Agung Perkasa', role: 'Videografer', email: 'agung@videographer.com', phone: '081299990000', standardFee: 2000000, noRek: 'BNI 5544332211', rewardBalance: 0, rating: 4, performanceNotes: [], portalAccessId: 'a1b2c3d4-freelancer-agung' },
 ];
 
 // --- Projects (Define Structure, financial state will be calculated) ---
 let projectsData: Project[] = [
-    { id: 'PRJ001', projectName: 'Pernikahan Andi & Siska', clientName: 'Andi & Siska', clientId: 'CLI001', projectType: 'Pernikahan', packageName: MOCK_PACKAGES[1].name, packageId: MOCK_PACKAGES[1].id, addOns: [MOCK_ADDONS[1]], date: createMockDate(1, 10), deadlineDate: createMockDate(2, 10), location: 'Hotel Mulia, Jakarta', progress: 75, status: ProjectStatus.EDITING, subStatus: 'Video', totalCost: 27000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: 'TM001', name: 'Bambang Sudiro', role: 'Fotografer', fee: 1500000, reward: 200000 }, { memberId: 'TM003', name: 'Rahmat Hidayat', role: 'Videografer', fee: 2000000, reward: 250000 }, { memberId: 'TM004', name: 'Dewi Anjani', role: 'Editor', fee: 1000000, reward: 100000 }], revisions: [{id: 'REV001', date: createMockDate(0, -3), adminNotes: 'Tolong perbaiki tone warna di menit 2:15-2:30, buat lebih warm. Ganti musik latar belakang dengan opsi B yang sudah diberikan di GDrive.', deadline: createMockDate(0, 4), freelancerId: 'TM003', status: RevisionStatus.PENDING,}] },
-    { id: 'PRJ002', projectName: 'Prewedding Budi & Rekan', clientName: 'Budi Santoso', clientId: 'CLI002', projectType: 'Pre-wedding', packageName: MOCK_PACKAGES[0].name, packageId: MOCK_PACKAGES[0].id, addOns: [], date: createMockDate(-2, 25), deadlineDate: createMockDate(-1, 25), location: 'Bromo, Jawa Timur', progress: 100, status: ProjectStatus.COMPLETED, totalCost: 15000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: 'TM002', name: 'Siti Aminah', role: 'Fotografer', fee: 2000000, reward: 250000 }], finalDriveLink: 'https://example.com/final-budi' },
-    { id: 'PRJ003', projectName: 'Lamaran Citra', clientName: 'Citra Lestari', clientId: 'CLI003', projectType: 'Lamaran', packageName: MOCK_PACKAGES[0].name, packageId: MOCK_PACKAGES[0].id, addOns: [], date: createMockDate(-1, 20), deadlineDate: createMockDate(0, 20), location: 'Bandung', progress: 95, status: ProjectStatus.SHIPPED, shippingDetails: 'Flashdisk via JNE AWB123456', totalCost: 15000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: 'TM001', name: 'Bambang Sudiro', role: 'Fotografer', fee: 1500000, reward: 150000 }], finalDriveLink: 'https://example.com/final-citra' },
-    { id: 'PRJ004', projectName: 'Pernikahan Fajar & Pasangan', clientName: 'Fajar Nugraha', clientId: 'CLI004', projectType: 'Pernikahan', packageName: MOCK_PACKAGES[0].name, packageId: MOCK_PACKAGES[0].id, addOns: [MOCK_ADDONS[3]], date: createMockDate(0, 28), deadlineDate: createMockDate(1, 28), location: 'Gedung Kesenian, Jakarta', progress: 10, status: ProjectStatus.PREPARATION, totalCost: 16000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: 'TM005', name: 'Agung Perkasa', role: 'Videografer', fee: 2000000, reward: 200000 }] },
-    { id: 'PRJ005', projectName: 'Pernikahan Eko & Pasangan', clientName: 'Eko Prasetyo', clientId: 'CLI005', projectType: 'Pernikahan', packageName: MOCK_PACKAGES[2].name, packageId: MOCK_PACKAGES[2].id, addOns: [MOCK_ADDONS[0], MOCK_ADDONS[1], MOCK_ADDONS[2]], date: createMockDate(2, 15), deadlineDate: createMockDate(3, 15), location: 'Surabaya', progress: 0, status: ProjectStatus.PENDING, totalCost: 46250000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [] },
+    { id: project_ids.p1, projectName: 'Pernikahan Andi & Siska', clientName: 'Andi & Siska', clientId: client_ids.andi, projectType: 'Pernikahan', packageName: 'Paket Sapphire', packageId: package_ids.sapphire, addOns: [{...MOCK_ADDONS.find(a => a.id === addon_ids.drone)!}], date: createMockDate(1, 10), deadlineDate: createMockDate(2, 25), location: 'Hotel Mulia, Jakarta', progress: 25, status: 'Persiapan', activeSubStatuses: ['Briefing Tim'], totalCost: 20500000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', fee: 1500000, reward: 200000 }, { memberId: team_member_ids.siti, name: 'Siti Aminah', role: 'Fotografer', fee: 1500000, reward: 200000 }, { memberId: team_member_ids.rahmat, name: 'Rahmat Hidayat', role: 'Videografer', fee: 2000000, reward: 250000 }, { memberId: team_member_ids.agung, name: 'Agung Perkasa', role: 'Videografer', fee: 2000000, reward: 250000 }, { memberId: team_member_ids.dewi, name: 'Dewi Anjani', role: 'Editor', fee: 1000000, reward: 100000 }], dpProofUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' },
+    { id: project_ids.p2, projectName: 'Prewedding Budi & Rekan', clientName: 'Budi Santoso (WO)', clientId: client_ids.budi, projectType: 'Pre-wedding', packageName: 'Paket Ruby', packageId: package_ids.ruby, addOns: [], date: createMockDate(-3, 25), deadlineDate: createMockDate(-2, 25), location: 'Bromo, Jawa Timur', progress: 100, status: 'Selesai', totalCost: 12000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.siti, name: 'Siti Aminah', role: 'Fotografer', fee: 2000000, reward: 250000, subJob: 'Candid Photography' }], finalDriveLink: 'https://example.com/final-budi', isEditingConfirmedByClient: true, isPrintingConfirmedByClient: true, isDeliveryConfirmedByClient: true },
+    { id: project_ids.p3, projectName: 'Lamaran Citra Lestari', clientName: 'Citra Lestari', clientId: client_ids.citra, projectType: 'Lamaran', packageName: 'Paket Engagement Simple', packageId: package_ids.engagement, addOns: [], date: createMockDate(-2, 20), deadlineDate: createMockDate(-1, 20), location: 'Bandung', progress: 100, status: 'Selesai', totalCost: 5000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', fee: 1500000, reward: 150000 }], finalDriveLink: 'https://example.com/final-citra' },
+    { 
+        id: project_ids.p4, projectName: 'Pernikahan Fajar', clientName: 'Fajar Nugraha', clientId: client_ids.fajar, projectType: 'Pernikahan', packageName: 'Paket Ruby', packageId: package_ids.ruby, addOns: [{...MOCK_ADDONS.find(a => a.id === addon_ids.extra_hour)!}], date: createMockDate(0, 28), deadlineDate: createMockDate(1, 28), location: 'Gedung Kesenian, Jakarta', progress: 70, status: 'Editing', activeSubStatuses: ['Editing Video'], totalCost: 13000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.agung, name: 'Agung Perkasa', role: 'Videografer', fee: 2000000, reward: 200000 }, { memberId: team_member_ids.dewi, name: 'Dewi Anjani', role: 'Editor', fee: 1000000, reward: 100000 }],
+        confirmedSubStatuses: ['Seleksi Foto'],
+        clientSubStatusNotes: { 'Seleksi Foto': 'Tolong prioritaskan foto-foto candid saat upacara ya, kami lebih suka yang natural.' }
+    },
+    { id: project_ids.p5, projectName: 'Pernikahan Eko & Pasangan', clientName: 'Eko Prasetyo', clientId: client_ids.eko, projectType: 'Pernikahan', packageName: 'Paket Emerald', packageId: package_ids.emerald, addOns: [], date: createMockDate(2, 15), deadlineDate: createMockDate(3, 15), location: 'Surabaya', progress: 0, status: 'Tertunda', activeSubStatuses: ['Menunggu DP'], totalCost: 28000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [] },
+    { id: project_ids.p6, projectName: 'Prewedding Gita Permata', clientName: 'Gita Permata', clientId: client_ids.gita, projectType: 'Pre-wedding', packageName: 'Paket Prewedding Classic', packageId: package_ids.prewedding, addOns: [], date: createMockDate(-1, 10), deadlineDate: createMockDate(0, 1), location: 'Kawah Putih, Bandung', progress: 80, status: 'Revisi', activeSubStatuses: ['Revisi Klien 1'], totalCost: 7500000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', fee: 1750000, reward: 200000 }, { memberId: team_member_ids.rahmat, name: 'Rahmat Hidayat', role: 'Videografer', fee: 2000000, reward: 200000 }], revisions: [{id: 'c1111111-aaaa-4aaa-8aaa-111111111111', date: createMockDate(0, -3), adminNotes: 'Tolong perbaiki tone warna di menit 2:15-2:30, buat lebih warm.', deadline: createMockDate(0, 4), freelancerId: team_member_ids.rahmat, status: RevisionStatus.PENDING,}] },
+    { id: project_ids.p7, projectName: 'Event EO Hendra', clientName: 'Hendra Wijaya (EO)', clientId: client_ids.hendra, projectType: 'Acara Korporat', packageName: 'Paket Ruby', packageId: package_ids.ruby, addOns: [{...MOCK_ADDONS.find(a => a.id === addon_ids.sde)!}, {...MOCK_ADDONS.find(a => a.id === addon_ids.drone)!}], date: createMockDate(0, 15), deadlineDate: createMockDate(1, 15), location: 'Ritz-Carlton, Surabaya', progress: 40, status: 'Dikonfirmasi', activeSubStatuses: ['DP Lunas', 'Kontrak Ditandatangani'], totalCost: 17500000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', fee: 1500000, reward: 300000}, { memberId: team_member_ids.agung, name: 'Agung Perkasa', role: 'Videografer', fee: 2000000, reward: 400000}] },
+    { id: project_ids.p8, projectName: 'Pernikahan Lanjutan Andi', clientName: 'Andi & Siska', clientId: client_ids.andi, projectType: 'Pernikahan', packageName: 'Paket Emerald', packageId: package_ids.emerald, addOns: [], date: createMockDate(3, 20), deadlineDate: createMockDate(4, 20), location: 'Bali', progress: 10, status: 'Persiapan', activeSubStatuses: ['Survey Lokasi'], totalCost: 28000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [] },
+    { id: project_ids.p9, projectName: 'Ulang Tahun Anak Fajar', clientName: 'Fajar Nugraha', clientId: client_ids.fajar, projectType: 'Ulang Tahun', packageName: 'Paket Engagement Simple', packageId: package_ids.engagement, addOns: [], date: createMockDate(0, 22), deadlineDate: createMockDate(1, 22), location: 'Rumah Fajar, Jakarta', progress: 85, status: 'Cetak', activeSubStatuses: ['Layouting Album'], totalCost: 5000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{memberId: team_member_ids.siti, name: 'Siti Aminah', role: 'Fotografer', fee: 1500000, reward: 100000}] },
+    { id: project_ids.p10, projectName: 'Revisi Video Citra', clientName: 'Citra Lestari', clientId: client_ids.citra, projectType: 'Lamaran', packageName: 'Paket Engagement Simple', packageId: package_ids.engagement, addOns: [], date: createMockDate(0, 5), deadlineDate: createMockDate(1, 5), location: 'Bandung', progress: 80, status: 'Revisi', activeSubStatuses: ['Revisi Internal'], totalCost: 0, amountPaid: 0, paymentStatus: PaymentStatus.LUNAS, team: [{ memberId: team_member_ids.dewi, name: 'Dewi Anjani', role: 'Editor', fee: 500000, reward: 50000}] },
+    { id: project_ids.p11, projectName: 'Finalisasi Album Gita', clientName: 'Gita Permata', clientId: client_ids.gita, projectType: 'Pre-wedding', packageName: 'Paket Prewedding Classic', packageId: package_ids.prewedding, addOns: [{...MOCK_ADDONS.find(a => a.id === addon_ids.canvas)!}], date: createMockDate(0, 8), deadlineDate: createMockDate(1, 8), location: 'Bandung', progress: 95, status: 'Dikirim', activeSubStatuses: ['Dalam Pengiriman'], shippingDetails: 'JNE CGK123456789', totalCost: 8250000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: []},
+    { id: project_ids.p12, projectName: 'Foto Produk Kopi Hendra', clientName: 'Hendra Wijaya (EO)', clientId: client_ids.hendra, projectType: 'Acara Korporat', packageName: 'Paket Engagement Simple', packageId: package_ids.engagement, addOns: [], date: createMockDate(0, 1), deadlineDate: createMockDate(0, 15), location: 'Studio, Surabaya', progress: 75, status: 'Editing', activeSubStatuses: ['Editing Foto', 'Seleksi Foto'], totalCost: 5000000, amountPaid: 0, paymentStatus: PaymentStatus.BELUM_BAYAR, team: [{ memberId: team_member_ids.bambang, name: 'Bambang Sudiro', role: 'Fotografer', fee: 1000000, reward: 100000}] },
 ];
 
 // --- SINGLE SOURCE OF TRUTH: TRANSACTIONS ---
-const baseTransactions: Transaction[] = [
-    { id: 'TRN-INIT-001', date: createMockDate(-6, 1), description: 'Modal Awal Usaha', amount: 50000000, type: TransactionType.INCOME, category: 'Modal', method: 'Sistem', cardId: 'CARD001' },
-    { id: 'TRN-TFR-001', date: createMockDate(-5, 5), description: 'Setor ke Dana Darurat', amount: 15000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: 'CARD001', pocketId: 'POC001' },
-    { id: 'TRN-TFR-002', date: createMockDate(-5, 6), description: 'Setor ke Beli Kamera Baru', amount: 5000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: 'CARD001', pocketId: 'POC002' },
-    { id: 'TRN-TFR-003', date: createMockDate(-1, 1), description: 'Anggaran Operasional Bulanan', amount: 5000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: 'CARD001', pocketId: 'POC003' },
-    { id: 'TRN-PRJ002-DP', date: createMockDate(-3, 1), description: 'DP Proyek Prewedding Budi', amount: 7500000, type: TransactionType.INCOME, projectId: 'PRJ002', category: 'DP Proyek', method: 'Transfer Bank', cardId: 'CARD001', pocketId: 'POC005' },
-    { id: 'TRN-PRJ002-FINAL', date: createMockDate(-2, 20), description: 'Pelunasan Proyek Prewedding Budi', amount: 7500000, type: TransactionType.INCOME, projectId: 'PRJ002', category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: 'CARD002', pocketId: 'POC005' },
-    { id: 'TRN-PRJ002-FEE', date: createMockDate(-2, 22), description: 'Gaji Freelancer Siti Aminah - Proyek Budi', amount: 2000000, type: TransactionType.EXPENSE, projectId: 'PRJ002', category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: 'CARD001' },
-    { id: 'TRN-PRJ002-RWD', date: createMockDate(-2, 22), description: 'Hadiah untuk Siti Aminah (Proyek: Prewedding Budi & Rekan)', amount: 250000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem' },
-    { id: 'TRN-PRJ002-COST', date: createMockDate(-2, 23), description: 'Transportasi & Akomodasi Bromo', amount: 2500000, type: TransactionType.EXPENSE, projectId: 'PRJ002', category: 'Transportasi', method: 'Tunai', cardId: 'CARD_CASH' },
-    { id: 'TRN-PRJ003-FULL', date: createMockDate(-2, 1), description: 'Pelunasan Proyek Lamaran Citra', amount: 15000000, type: TransactionType.INCOME, projectId: 'PRJ003', category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: 'CARD001', pocketId: 'POC005' },
-    { id: 'TRN-PRJ003-FEE', date: createMockDate(-1, 22), description: 'Gaji Freelancer Bambang Sudiro - Proyek Citra', amount: 1500000, type: TransactionType.EXPENSE, projectId: 'PRJ003', category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: 'CARD001' },
-    { id: 'TRN-PRJ003-RWD', date: createMockDate(-1, 22), description: 'Hadiah untuk Bambang Sudiro (Proyek: Lamaran Citra)', amount: 150000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem' },
-    { id: 'TRN-PRJ001-DP', date: createMockDate(-1, 20), description: 'DP Proyek Pernikahan Andi & Siska', amount: 10000000, type: TransactionType.INCOME, projectId: 'PRJ001', category: 'DP Proyek', method: 'Transfer Bank', cardId: 'CARD002', pocketId: 'POC005' },
-    { id: 'TRN-PRJ001-RWD-A', date: createMockDate(-1, 20), description: 'Hadiah untuk Bambang Sudiro (Proyek: Pernikahan Andi & Siska)', amount: 200000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem' },
-    { id: 'TRN-PRJ001-RWD-B', date: createMockDate(-1, 20), description: 'Hadiah untuk Rahmat Hidayat (Proyek: Pernikahan Andi & Siska)', amount: 250000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem' },
-    { id: 'TRN-PRJ004-DP', date: createMockDate(0, -1), description: 'DP Proyek Pernikahan Fajar & Pasangan', amount: 8000000, type: TransactionType.INCOME, projectId: 'PRJ004', category: 'DP Proyek', method: 'Transfer Bank', cardId: 'CARD001', pocketId: 'POC005' },
-    { id: 'TRN-PRJ004-RWD', date: createMockDate(0, -1), description: 'Hadiah untuk Agung Perkasa (Proyek: Pernikahan Fajar & Pasangan)', amount: 200000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem' },
-    { id: 'TRN-GEN-001', date: createMockDate(0, -15), description: 'Biaya Iklan Instagram', amount: 500000, type: TransactionType.EXPENSE, category: 'Marketing', method: 'Kartu', cardId: 'CARD003' },
-    { id: 'TRN-GEN-002', date: createMockDate(0, -10), description: 'Pembelian ATK Kantor', amount: 750000, type: TransactionType.EXPENSE, category: 'Operasional Kantor', method: 'Sistem', pocketId: 'POC003' },
-    { id: 'TRN-RWD-WTH-BAMBANG', date: createMockDate(0, -5), description: 'Penarikan saldo hadiah oleh Bambang Sudiro', amount: 150000, type: TransactionType.EXPENSE, category: 'Penarikan Hadiah Freelancer', method: 'Transfer Bank', cardId: 'CARD001' },
+const baseTransactions: (Transaction & {teamMemberId?: string})[] = [
+    { id: '30000000-0000-4000-8000-000000000001', date: createMockDate(-6, 1), description: 'Modal Awal Usaha', amount: 50000000, type: TransactionType.INCOME, category: 'Modal', method: 'Sistem', cardId: card_ids.wbank1 },
+    { id: '30000000-0000-4000-8000-000000000002', date: createMockDate(-5, 5), description: 'Setor ke Dana Darurat', amount: 10000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: card_ids.wbank1, pocketId: pocket_ids.emergency },
+    { id: '30000000-0000-4000-8000-000000000003', date: createMockDate(-5, 6), description: 'Setor ke Beli Kamera Baru', amount: 8000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: card_ids.wbank1, pocketId: pocket_ids.camera },
+    { id: '30000000-0000-4000-8000-000000000004', date: createMockDate(-1, 1), description: 'Anggaran Operasional Bulanan', amount: 5000000, type: TransactionType.EXPENSE, category: 'Transfer Internal', method: 'Sistem', cardId: card_ids.wbank1, pocketId: pocket_ids.operational },
+    // Project 2 (Budi) - Selesai
+    { id: '30000000-0000-4000-8000-000000000005', date: createMockDate(-3, 20), description: 'DP Proyek Prewedding Budi', amount: 6000000, type: TransactionType.INCOME, projectId: project_ids.p2, category: 'DP Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    { id: '30000000-0000-4000-8000-000000000006', date: createMockDate(-2, 25), description: 'Pelunasan Proyek Prewedding Budi', amount: 6000000, type: TransactionType.INCOME, projectId: project_ids.p2, category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: card_ids.wbank2 },
+    { id: '30000000-0000-4000-8000-000000000007', date: createMockDate(-2, 26), description: 'Gaji Freelancer Siti Aminah - Proyek Budi', amount: 2000000, type: TransactionType.EXPENSE, projectId: project_ids.p2, category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: card_ids.wbank1, teamMemberId: team_member_ids.siti },
+    { id: '30000000-0000-4000-8000-000000000008', date: createMockDate(-2, 26), description: 'Hadiah untuk Siti Aminah (Proyek: Prewedding Budi & Rekan)', amount: 250000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.siti, projectId: project_ids.p2 },
+    { id: '30000000-0000-4000-8000-000000000009', date: createMockDate(-3, 23), description: 'Transportasi & Akomodasi Bromo', amount: 2500000, type: TransactionType.EXPENSE, projectId: project_ids.p2, category: 'Transportasi', method: 'Tunai', cardId: card_ids.cash },
+    // Project 3 (Citra) - Selesai
+    { id: '30000000-0000-4000-8000-000000000010', date: createMockDate(-2, 18), description: 'Pelunasan Proyek Lamaran Citra', amount: 5000000, type: TransactionType.INCOME, projectId: project_ids.p3, category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    { id: '30000000-0000-4000-8000-000000000011', date: createMockDate(-2, 19), description: 'Gaji Freelancer Bambang Sudiro - Proyek Citra', amount: 1500000, type: TransactionType.EXPENSE, projectId: project_ids.p3, category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: card_ids.wbank1, teamMemberId: team_member_ids.bambang },
+    { id: '30000000-0000-4000-8000-000000000012', date: createMockDate(-2, 19), description: 'Hadiah untuk Bambang Sudiro (Proyek: Lamaran Citra Lestari)', amount: 150000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.bambang, projectId: project_ids.p3 },
+    // Project 1 (Andi) - Persiapan
+    { id: '30000000-0000-4000-8000-000000000013', date: createMockDate(0, -10), description: 'DP Proyek Pernikahan Andi & Siska', amount: 10000000, type: TransactionType.INCOME, projectId: project_ids.p1, category: 'DP Proyek', method: 'Transfer Bank', cardId: card_ids.wbank2 },
+    // Project 4 (Fajar) - Editing
+    { id: '30000000-0000-4000-8000-000000000014', date: createMockDate(0, -5), description: 'DP Proyek Pernikahan Fajar', amount: 6500000, type: TransactionType.INCOME, projectId: project_ids.p4, category: 'DP Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    { id: '30000000-0000-4000-8000-000000000015', date: createMockDate(0, -5), description: 'Hadiah untuk Agung Perkasa (Proyek: Pernikahan Fajar)', amount: 200000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.agung, projectId: project_ids.p4},
+    { id: '30000000-0000-4000-8000-000000000016', date: createMockDate(0, -5), description: 'Hadiah untuk Dewi Anjani (Proyek: Pernikahan Fajar)', amount: 100000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.dewi, projectId: project_ids.p4},
+    // Project 6 (Gita) - Revisi
+    { id: '30000000-0000-4000-8000-000000000017', date: createMockDate(-1, 8), description: 'Pelunasan Proyek Prewedding Gita', amount: 7500000, type: TransactionType.INCOME, projectId: project_ids.p6, category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    { id: '30000000-0000-4000-8000-000000000018', date: createMockDate(-1, 9), description: 'Gaji Freelancer Bambang Sudiro - Proyek Gita', amount: 1750000, type: TransactionType.EXPENSE, projectId: project_ids.p6, category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: card_ids.wbank1, teamMemberId: team_member_ids.bambang },
+    { id: '30000000-0000-4000-8000-000000000019', date: createMockDate(-1, 9), description: 'Gaji Freelancer Rahmat Hidayat - Proyek Gita', amount: 2000000, type: TransactionType.EXPENSE, projectId: project_ids.p6, category: 'Gaji Freelancer', method: 'Transfer Bank', cardId: card_ids.wbank1, teamMemberId: team_member_ids.rahmat },
+    { id: '30000000-0000-4000-8000-000000000020', date: createMockDate(-1, 9), description: 'Hadiah untuk Bambang Sudiro (Proyek: Prewedding Gita Permata)', amount: 200000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.bambang, projectId: project_ids.p6},
+    { id: '30000000-0000-4000-8000-000000000021', date: createMockDate(-1, 9), description: 'Hadiah untuk Rahmat Hidayat (Proyek: Prewedding Gita Permata)', amount: 200000, type: TransactionType.EXPENSE, category: 'Hadiah Freelancer', method: 'Sistem', teamMemberId: team_member_ids.rahmat, projectId: project_ids.p6},
+    // Project 7 (Hendra) - Dikonfirmasi
+    { id: '30000000-0000-4000-8000-000000000022', date: createMockDate(0, -2), description: 'DP Proyek Event EO Hendra', amount: 8000000, type: TransactionType.INCOME, projectId: project_ids.p7, category: 'DP Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    // Project 9 (Fajar Birthday) - Cetak
+    { id: '30000000-0000-4000-8000-000000000023', date: createMockDate(0, 20), description: 'Pelunasan Proyek Ulang Tahun Anak Fajar', amount: 5000000, type: TransactionType.INCOME, projectId: project_ids.p9, category: 'Pelunasan Proyek', method: 'Tunai', cardId: card_ids.cash},
+    // Project 11 (Gita Album) - Dikirim
+    { id: '30000000-0000-4000-8000-000000000024', date: createMockDate(0, 6), description: 'Pelunasan Proyek Finalisasi Album Gita', amount: 8250000, type: TransactionType.INCOME, projectId: project_ids.p11, category: 'Pelunasan Proyek', method: 'Transfer Bank', cardId: card_ids.wbank2},
+    { id: '30000000-0000-4000-8000-000000000025', date: createMockDate(0, 7), description: 'Biaya Cetak Kanvas - Gita', amount: 750000, type: TransactionType.EXPENSE, projectId: project_ids.p11, category: 'Cetak Foto', method: 'Transfer Bank', cardId: card_ids.wbank1},
+    // Project 12 (Hendra Kopi) - Editing
+    { id: '30000000-0000-4000-8000-000000000026', date: createMockDate(0, 0), description: 'DP Proyek Foto Produk Kopi Hendra', amount: 2500000, type: TransactionType.INCOME, projectId: project_ids.p12, category: 'DP Proyek', method: 'Transfer Bank', cardId: card_ids.wbank1 },
+    // General & Internal
+    { id: '30000000-0000-4000-8000-000000000027', date: createMockDate(0, -15), description: 'Biaya Iklan Instagram', amount: 750000, type: TransactionType.EXPENSE, category: 'Marketing', method: 'Kartu', cardId: card_ids.visa },
+    { id: '30000000-0000-4000-8000-000000000028', date: createMockDate(0, -10), description: 'Pembelian ATK Kantor', amount: 500000, type: TransactionType.EXPENSE, category: 'Operasional Kantor', method: 'Sistem', pocketId: pocket_ids.operational },
+    { id: '30000000-0000-4000-8000-000000000029', date: createMockDate(0, -5), description: 'Penarikan saldo hadiah oleh Bambang Sudiro', amount: 350000, type: TransactionType.EXPENSE, category: 'Penarikan Hadiah Freelancer', method: 'Transfer Bank', cardId: card_ids.wbank1, teamMemberId: team_member_ids.bambang },
 ];
 
 // --- DERIVED DATA (Calculated from transactions for consistency) ---
-// Note: This logic would typically be on a backend. We simulate it here for mock data integrity.
-
 projectsData = projectsData.map(p => {
-    const amountPaid = baseTransactions
-        .filter(t => t.projectId === p.id && t.type === TransactionType.INCOME)
-        .reduce((sum, t) => sum + t.amount, 0);
+    const amountPaid = baseTransactions.filter(t => t.projectId === p.id && t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
     let paymentStatus = PaymentStatus.BELUM_BAYAR;
     if (amountPaid > 0) paymentStatus = amountPaid >= p.totalCost ? PaymentStatus.LUNAS : PaymentStatus.DP_TERBAYAR;
+    if (p.totalCost === 0 && amountPaid === 0) paymentStatus = PaymentStatus.LUNAS; // For internal tasks with no cost
     return { ...p, amountPaid, paymentStatus };
 });
 
 export const MOCK_REWARD_LEDGER_ENTRIES: RewardLedgerEntry[] = baseTransactions
-    .filter(t => t.category === 'Hadiah Freelancer' || t.category === 'Penarikan Hadiah Freelancer')
-    .map(t => {
-        let memberId = '';
-        if (t.category === 'Hadiah Freelancer') {
-            const teamMemberName = t.description.match(/untuk (.*?)( |\(|$)/)?.[1];
-            const member = teamMembersData.find(m => m.name.includes(teamMemberName || ''));
-            if (member) memberId = member.id;
-        } else {
-            const teamMemberName = t.description.match(/oleh (.*?)$/)?.[1];
-            const member = teamMembersData.find(m => m.name === teamMemberName);
-            if (member) memberId = member.id;
-        }
-        return {
-            id: `RLE-${t.id}`,
-            teamMemberId: memberId, date: t.date, description: t.description,
-            amount: t.category === 'Penarikan Hadiah Freelancer' ? -t.amount : t.amount,
-        };
-    })
-    .filter(e => e.teamMemberId)
-    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .filter(t => (t.category === 'Hadiah Freelancer' || t.category === 'Penarikan Hadiah Freelancer') && t.teamMemberId)
+    .map(t => ({
+        id: `rle-${t.id}`, teamMemberId: t.teamMemberId!, date: t.date, description: t.description,
+        amount: t.category === 'Penarikan Hadiah Freelancer' ? -t.amount : t.amount, projectId: t.projectId,
+    })).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 teamMembersData.forEach(member => {
-    member.rewardBalance = MOCK_REWARD_LEDGER_ENTRIES
-        .filter(e => e.teamMemberId === member.id)
-        .reduce((sum, e) => sum + e.amount, 0);
+    member.rewardBalance = MOCK_REWARD_LEDGER_ENTRIES.filter(e => e.teamMemberId === member.id).reduce((sum, e) => sum + e.amount, 0);
 });
 
 let cardsData: Card[] = [
-  { id: 'CARD001', cardHolderName: 'Nama Pengguna', bankName: 'WBank', cardType: CardType.PRABAYAR, lastFourDigits: '3090', expiryDate: '09/24', balance: 0, colorGradient: 'from-purple-500 to-indigo-600' },
-  { id: 'CARD002', cardHolderName: 'Nama Pengguna', bankName: 'WBank', cardType: CardType.PRABAYAR, lastFourDigits: '9800', expiryDate: '04/26', balance: 0, colorGradient: 'from-blue-500 to-cyan-500' },
-  { id: 'CARD003', cardHolderName: 'Nama Pengguna', bankName: 'VISA', cardType: CardType.KREDIT, lastFourDigits: '0032', expiryDate: '09/24', balance: 0, colorGradient: 'from-slate-100 to-slate-300' },
-  { id: 'CARD_CASH', cardHolderName: 'Uang Tunai', bankName: 'Tunai', cardType: CardType.DEBIT, lastFourDigits: 'CASH', balance: 0, colorGradient: 'from-emerald-500 to-green-600' },
+  { id: card_ids.wbank1, cardHolderName: 'Admin Vena', bankName: 'WBank', cardType: CardType.PRABAYAR, lastFourDigits: '3090', expiryDate: '09/24', balance: 0, colorGradient: 'from-purple-500 to-indigo-600' },
+  { id: card_ids.wbank2, cardHolderName: 'Admin Vena', bankName: 'WBank', cardType: CardType.PRABAYAR, lastFourDigits: '9800', expiryDate: '04/26', balance: 0, colorGradient: 'from-blue-500 to-cyan-500' },
+  { id: card_ids.visa, cardHolderName: 'Admin Vena', bankName: 'VISA', cardType: CardType.KREDIT, lastFourDigits: '0032', expiryDate: '09/24', balance: 0, colorGradient: 'from-slate-100 to-slate-300' },
+  { id: card_ids.cash, cardHolderName: 'Uang Tunai', bankName: 'Tunai', cardType: CardType.DEBIT, lastFourDigits: 'CASH', balance: 0, colorGradient: 'from-emerald-500 to-green-600' },
 ];
 
 cardsData.forEach(card => {
@@ -429,40 +581,32 @@ cardsData.forEach(card => {
 });
 
 let pocketsData: FinancialPocket[] = [
-    { id: 'POC001', name: 'Dana Darurat', description: 'Untuk keperluan tak terduga', icon: 'piggy-bank', type: PocketType.SAVING, amount: 0, goalAmount: 50000000, sourceCardId: 'CARD001' },
-    { id: 'POC002', name: 'Beli Kamera Baru', description: 'Upgrade ke Sony A7IV', icon: 'lock', type: PocketType.LOCKED, amount: 0, goalAmount: 35000000, lockEndDate: createMockDate(6, 1), sourceCardId: 'CARD001' },
-    { id: 'POC003', name: `Anggaran Operasional ${new Date().toLocaleString('id-ID', {month: 'long', year: 'numeric'})}`, description: 'Budget untuk pengeluaran rutin', icon: 'clipboard-list', type: PocketType.EXPENSE, amount: 0, goalAmount: 5000000, sourceCardId: 'CARD001' },
-    { id: 'POC005', name: 'Pemasukan dari Klien', description: 'Kantong untuk melacak total pemasukan.', icon: 'piggy-bank', type: PocketType.SAVING, amount: 0 },
-    { id: 'POC_REWARD', name: 'Tabungan Hadiah Freelancer', description: 'Total saldo hadiah semua freelancer.', icon: 'star', type: PocketType.REWARD_POOL, amount: 0 },
+    { id: pocket_ids.emergency, name: 'Dana Darurat', description: 'Untuk keperluan tak terduga', icon: 'piggy-bank', type: PocketType.SAVING, amount: 0, goalAmount: 50000000, sourceCardId: card_ids.wbank1 },
+    { id: pocket_ids.camera, name: 'Beli Kamera Baru', description: 'Upgrade ke Sony A7IV', icon: 'lock', type: PocketType.LOCKED, amount: 0, goalAmount: 35000000, lockEndDate: createMockDate(6, 1), sourceCardId: card_ids.wbank1 },
+    { id: pocket_ids.operational, name: `Anggaran Operasional ${new Date().toLocaleString('id-ID', {month: 'long', year: 'numeric'})}`, description: 'Budget untuk pengeluaran rutin', icon: 'clipboard-list', type: PocketType.EXPENSE, amount: 0, goalAmount: 5000000, sourceCardId: card_ids.wbank1 },
+    { id: pocket_ids.reward_pool, name: 'Tabungan Hadiah Freelancer', description: 'Total saldo hadiah semua freelancer.', icon: 'star', type: PocketType.REWARD_POOL, amount: 0 },
 ];
 
 pocketsData.forEach(pocket => {
     pocket.amount = baseTransactions.reduce((sum, t) => {
         if (t.pocketId === pocket.id) {
-            if (t.description.startsWith('Setor ke') || t.description.startsWith('DP Proyek') || t.description.startsWith('Pelunasan Proyek')) return sum + t.amount;
-            return sum - t.amount;
+            if (t.description.startsWith('Setor ke')) return sum + t.amount;
+            if (t.type === TransactionType.EXPENSE) return sum - t.amount;
         }
         return sum;
     }, 0);
 });
 pocketsData.find(p => p.type === PocketType.REWARD_POOL)!.amount = teamMembersData.reduce((sum, m) => sum + m.rewardBalance, 0);
 
-
 let teamProjectPaymentsData: TeamProjectPayment[] = projectsData.flatMap(p => 
-    p.team.map(t => ({
-        id: `TPP-${p.id}-${t.memberId}`, projectId: p.id, teamMemberName: t.name, teamMemberId: t.memberId, date: p.date,
+    p.team.map((t, i) => ({
+        id: `tpp-${p.id}-${i}`, projectId: p.id, teamMemberName: t.name, teamMemberId: t.memberId, date: p.date,
         status: 'Unpaid', fee: t.fee, reward: t.reward || 0,
     }))
 );
-baseTransactions.filter(t => t.category === 'Gaji Freelancer').forEach(t => {
-    const memberName = t.description.split(' - ')[0].replace('Gaji Freelancer ', '');
-    const projectName = t.description.split(' - ')[1].replace('Proyek ', '');
-    const project = projectsData.find(p => p.projectName === projectName);
-    const member = teamMembersData.find(m => m.name === memberName);
-    if (project && member) {
-        const paymentEntry = teamProjectPaymentsData.find(p => p.projectId === project.id && p.teamMemberId === member.id);
-        if (paymentEntry) paymentEntry.status = 'Paid';
-    }
+baseTransactions.filter(t => t.category === 'Gaji Freelancer' && t.teamMemberId).forEach(t => {
+    const paymentEntry = teamProjectPaymentsData.find(p => p.projectId === t.projectId && p.teamMemberId === t.teamMemberId);
+    if (paymentEntry) paymentEntry.status = 'Paid';
 });
 
 // --- Final Exports ---
@@ -474,161 +618,44 @@ export const MOCK_TEAM_PROJECT_PAYMENTS = teamProjectPaymentsData;
 export const MOCK_TEAM_MEMBERS = teamMembersData;
 
 export const MOCK_TEAM_PAYMENT_RECORDS: TeamPaymentRecord[] = [
-    { id: 'TPR001', recordNumber: 'PAY-FR-TM002-1234', teamMemberId: 'TM002', date: createMockDate(-2, 22), projectPaymentIds: ['TPP-PRJ002-TM002'], totalAmount: 2000000 },
-    { id: 'TPR002', recordNumber: 'PAY-FR-TM001-5678', teamMemberId: 'TM001', date: createMockDate(-1, 22), projectPaymentIds: ['TPP-PRJ003-TM001'], totalAmount: 1500000 },
+    { id: '40000000-0000-4000-8000-000000000001', recordNumber: 'PAY-FR-TM002-1234', teamMemberId: team_member_ids.siti, date: createMockDate(-2, 26), projectPaymentIds: [MOCK_TEAM_PROJECT_PAYMENTS.find(p => p.projectId === project_ids.p2 && p.teamMemberId === team_member_ids.siti)?.id || ''], totalAmount: 2000000 },
+    { id: '40000000-0000-4000-8000-000000000002', recordNumber: 'PAY-FR-TM001-5678', teamMemberId: team_member_ids.bambang, date: createMockDate(-2, 19), projectPaymentIds: [MOCK_TEAM_PROJECT_PAYMENTS.find(p => p.projectId === project_ids.p3 && p.teamMemberId === team_member_ids.bambang)?.id || ''], totalAmount: 1500000 },
+    { id: '40000000-0000-4000-8000-000000000003', recordNumber: 'PAY-FR-TM001-9012', teamMemberId: team_member_ids.bambang, date: createMockDate(-1, 9), projectPaymentIds: [MOCK_TEAM_PROJECT_PAYMENTS.find(p => p.projectId === project_ids.p6 && p.teamMemberId === team_member_ids.bambang)?.id || ''], totalAmount: 1750000 },
+    { id: '40000000-0000-4000-8000-000000000004', recordNumber: 'PAY-FR-TM003-3456', teamMemberId: team_member_ids.rahmat, date: createMockDate(-1, 9), projectPaymentIds: [MOCK_TEAM_PROJECT_PAYMENTS.find(p => p.projectId === project_ids.p6 && p.teamMemberId === team_member_ids.rahmat)?.id || ''], totalAmount: 2000000 },
 ];
 
 export const MOCK_ASSETS: Asset[] = [
-    { id: 'ASSET001', name: 'Sony Alpha 7 IV', category: 'Kamera', purchaseDate: createMockDate(-12, 5), purchasePrice: 38000000, serialNumber: 'SN12345678', status: AssetStatus.AVAILABLE },
-    { id: 'ASSET002', name: 'Sony FE 24-70mm f/2.8 GM II', category: 'Lensa', purchaseDate: createMockDate(-12, 5), purchasePrice: 32000000, serialNumber: 'SN98765432', status: AssetStatus.AVAILABLE },
-    { id: 'ASSET003', name: 'DJI Mavic 3 Pro', category: 'Drone', purchaseDate: createMockDate(-6, 15), purchasePrice: 30000000, serialNumber: 'SNDRONE01', status: AssetStatus.IN_USE, notes: 'Digunakan untuk proyek Andi & Siska' },
-    { id: 'ASSET004', name: 'Godox AD200 Pro', category: 'Lighting', purchaseDate: createMockDate(-24, 1), purchasePrice: 5000000, status: AssetStatus.AVAILABLE },
-    { id: 'ASSET005', name: 'Canon EOS R5', category: 'Kamera', purchaseDate: createMockDate(-3, 20), purchasePrice: 60000000, serialNumber: 'SNCANONR5', status: AssetStatus.MAINTENANCE, notes: 'Sensor perlu dibersihkan.' },
+    { id: '50000000-0000-4000-8000-000000000001', name: 'Sony Alpha 7 IV', category: 'Kamera', purchaseDate: createMockDate(-12, 5), purchasePrice: 38000000, serialNumber: 'SN12345678', status: AssetStatus.AVAILABLE },
+    { id: '50000000-0000-4000-8000-000000000002', name: 'Sony FE 24-70mm f/2.8 GM II', category: 'Lensa', purchaseDate: createMockDate(-12, 5), purchasePrice: 32000000, serialNumber: 'SN98765432', status: AssetStatus.IN_USE, notes: 'Digunakan oleh Bambang' },
+    { id: '50000000-0000-4000-8000-000000000003', name: 'DJI Mavic 3 Pro', category: 'Drone', purchaseDate: createMockDate(-6, 15), purchasePrice: 30000000, serialNumber: 'SNDRONE01', status: AssetStatus.AVAILABLE },
+    { id: '50000000-0000-4000-8000-000000000004', name: 'Godox AD200 Pro', category: 'Lighting', purchaseDate: createMockDate(-24, 1), purchasePrice: 5000000, status: AssetStatus.MAINTENANCE, notes: 'Bohlam perlu diganti.' },
+    { id: '50000000-0000-4000-8000-000000000005', name: 'Canon EOS R5', category: 'Kamera', purchaseDate: createMockDate(-3, 20), purchasePrice: 60000000, serialNumber: 'SNCANONR5', status: AssetStatus.IN_USE, notes: 'Digunakan oleh Siti Aminah' },
 ];
 
 export const MOCK_CONTRACTS: Contract[] = [
-    {
-        id: 'CTR001',
-        contractNumber: 'VP/CTR/2024/001',
-        clientId: 'CLI001',
-        projectId: 'PRJ001',
-        signingDate: createMockDate(0, -15),
-        signingLocation: 'Kantor Vena Pictures',
-        clientName1: 'Andi',
-        clientAddress1: 'Jl. Bahagia No. 1, Jakarta',
-        clientPhone1: '081111111111',
-        clientName2: 'Siska',
-        clientAddress2: 'Jl. Bahagia No. 1, Jakarta',
-        clientPhone2: '081111111111',
-        shootingDuration: '10 Jam Liputan',
-        guaranteedPhotos: 'Minimum 500 foto high-res',
-        albumDetails: '1 Album Cetak Premium 20x30cm 20 halaman',
-        digitalFilesFormat: 'JPG High-Resolution & All Raw Files',
-        otherItems: 'Sewa Drone',
-        personnelCount: '2 Fotografer, 2 Videografer, 1 Asisten',
-        deliveryTimeframe: '45 hari kerja',
-        dpDate: createMockDate(-1, 20),
-        finalPaymentDate: createMockDate(1, 3), // H-7 before event
-        cancellationPolicy: "DP yang sudah dibayarkan tidak dapat dikembalikan. Jika pembatalan dilakukan H-14 sebelum hari pelaksanaan, PIHAK KEDUA wajib membayar 50% dari total biaya.",
-        jurisdiction: 'Jakarta Selatan',
-        createdAt: createMockDate(0, -15),
-    }
+    { id: '60000000-0000-4000-8000-000000000001', contractNumber: 'VP/CTR/2024/001', clientId: client_ids.andi, projectId: project_ids.p1, signingDate: createMockDate(0, -15), signingLocation: 'Kantor Vena Pictures', createdAt: createMockDate(0, -15), clientName1: 'Andi', clientAddress1: 'Hotel Mulia, Jakarta', clientPhone1: '081111111111', clientName2: 'Siska', clientAddress2: 'Hotel Mulia, Jakarta', clientPhone2: '081111111111', shootingDuration: 'Sesuai detail paket', guaranteedPhotos: '400 Foto Edit', albumDetails: '1 Album (20x30 cm, 20 halaman, Box), Cetak 4R (20 lembar + Box)', digitalFilesFormat: 'Semua File (USB)', otherItems: 'Sewa Drone', personnelCount: '2 Fotografer, 2 Videografer', deliveryTimeframe: '45 hari kerja', dpDate: createMockDate(0, -15), finalPaymentDate: createMockDate(1, 3), cancellationPolicy: 'DP yang sudah dibayarkan tidak dapat dikembalikan.\nJika pembatalan dilakukan H-7 sebelum hari pelaksanaan, PIHAK KEDUA wajib membayar 50% dari total biaya.', jurisdiction: 'Jakarta' },
+    { id: '60000000-0000-4000-8000-000000000002', contractNumber: 'VP/CTR/2024/002', clientId: client_ids.fajar, projectId: project_ids.p4, signingDate: createMockDate(0, -6), signingLocation: 'Online', createdAt: createMockDate(0, -6), clientName1: 'Fajar Nugraha', clientAddress1: 'Gedung Kesenian, Jakarta', clientPhone1: '084444444444', clientName2: '', clientAddress2: '', clientPhone2: '', shootingDuration: 'Sesuai detail paket', guaranteedPhotos: '300 Foto Edit', albumDetails: '1 Album (20x30 cm, 20 halaman)', digitalFilesFormat: 'Semua File (Link Drive)', otherItems: 'Jam Liputan Tambahan', personnelCount: '2 Fotografer, 1 Videografer', deliveryTimeframe: '30 hari kerja', dpDate: createMockDate(0, -6), finalPaymentDate: createMockDate(0, 21), cancellationPolicy: 'DP tidak dapat dikembalikan.', jurisdiction: 'Jakarta' },
 ];
 
 export const MOCK_CLIENT_FEEDBACK: ClientFeedback[] = [
-    { 
-        id: 'FB001', 
-        clientName: 'Budi Santoso', 
-        satisfaction: SatisfactionLevel.VERY_SATISFIED,
-        rating: 5, 
-        feedback: 'Tim sangat profesional dan hasilnya luar biasa! Sangat puas dengan pelayanan Vena Pictures.',
-        date: createMockDate(-1, 28) 
-    },
-    { 
-        id: 'FB002', 
-        clientName: 'Citra Lestari', 
-        satisfaction: SatisfactionLevel.SATISFIED,
-        rating: 4, 
-        feedback: 'Secara keseluruhan bagus, komunikasinya lancar. Hasilnya juga memuaskan.',
-        date: createMockDate(0, -5)
-    },
+    { id: '70000000-0000-4000-8000-000000000001', clientName: 'Budi Santoso', satisfaction: SatisfactionLevel.VERY_SATISFIED, rating: 5, feedback: 'Tim sangat profesional dan hasilnya luar biasa! Sangat puas dengan pelayanan Vena Pictures.', date: createMockDate(-1, 28) },
+    { id: '70000000-0000-4000-8000-000000000002', clientName: 'Citra Lestari', satisfaction: SatisfactionLevel.SATISFIED, rating: 4, feedback: 'Secara keseluruhan bagus, komunikasinya lancar. Hasilnya juga memuaskan.', date: createMockDate(0, -5) },
+    { id: '70000000-0000-4000-8000-000000000003', clientName: 'Fajar Nugraha', satisfaction: SatisfactionLevel.NEUTRAL, rating: 3, feedback: 'Hasilnya oke, tapi proses editing agak lama dari yang diharapkan.', date: createMockDate(0, -1) },
 ];
 
-export const MOCK_FREELANCER_FEEDBACK: FreelancerFeedback[] = [];
-
 export const MOCK_NOTIFICATIONS: Notification[] = [
-    {
-        id: 'NOTIF001',
-        title: 'Revisi Tertunda',
-        message: 'Rahmat Hidayat belum menyelesaikan revisi untuk proyek "Andi & Siska".',
-        timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-        isRead: false,
-        icon: 'revision',
-        link: { view: ViewType.PROJECTS, action: { type: 'VIEW_PROJECT_DETAILS', id: 'PRJ001' }}
-    },
-    {
-        id: 'NOTIF002',
-        title: 'Deadline Mendekat',
-        message: 'Proyek "Pernikahan Fajar & Pasangan" akan segera mencapai deadline.',
-        timestamp: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-        isRead: false,
-        icon: 'deadline',
-        link: { view: ViewType.PROJECTS, action: { type: 'VIEW_PROJECT_DETAILS', id: 'PRJ004' }}
-    },
-    {
-        id: 'NOTIF003',
-        title: 'Prospek Baru Masuk',
-        message: 'Gita Permata dari WhatsApp, lokasi di Bandung.',
-        timestamp: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-        isRead: true,
-        icon: 'lead',
-        link: { view: ViewType.PROSPEK, action: { type: 'VIEW_LEAD', id: 'LEAD002' }}
-    },
-     {
-        id: 'NOTIF004',
-        title: 'Pembayaran Belum Lunas',
-        message: 'Pelunasan untuk proyek "Pernikahan Andi & Siska" belum diterima.',
-        timestamp: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString(),
-        isRead: true,
-        icon: 'payment',
-        link: { view: ViewType.CLIENTS, action: { type: 'VIEW_CLIENT_DETAILS', id: 'CLI001' }}
-    }
+    { id: '80000000-0000-4000-8000-000000000001', title: 'Revisi Tertunda', message: 'Rahmat Hidayat belum menyelesaikan revisi untuk proyek "Prewedding Gita Permata".', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), isRead: false, icon: 'revision', link: { view: ViewType.PROJECTS, action: { type: 'VIEW_PROJECT_DETAILS', id: project_ids.p6 }}},
+    { id: '80000000-0000-4000-8000-000000000002', title: 'Deadline Mendekat', message: 'Proyek "Event EO Hendra" akan segera mencapai deadline.', timestamp: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), isRead: false, icon: 'deadline', link: { view: ViewType.PROJECTS, action: { type: 'VIEW_PROJECT_DETAILS', id: project_ids.p7 }}},
+    { id: '80000000-0000-4000-8000-000000000003', title: 'Prospek Baru Masuk', message: 'Maya Putri dari Referral, lokasi di Bandung.', timestamp: new Date(new Date().setDate(new Date().getDate() - 0)).toISOString(), isRead: false, icon: 'lead', link: { view: ViewType.PROSPEK, action: { type: 'VIEW_LEAD', id: '10000000-0000-4000-8000-000000000008' }}},
+    { id: '80000000-0000-4000-8000-000000000004', title: 'Pembayaran Belum Lunas', message: 'Pelunasan untuk proyek "Pernikahan Andi & Siska" belum diterima.', timestamp: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString(), isRead: true, icon: 'payment', link: { view: ViewType.CLIENTS, action: { type: 'VIEW_CLIENT_DETAILS', id: client_ids.andi }}},
+    { id: '80000000-0000-4000-8000-000000000005', title: 'Proyek Selesai', message: 'Proyek "Lamaran Citra Lestari" telah selesai. Minta feedback klien.', timestamp: new Date(new Date().setDate(new Date().getDate() - 6)).toISOString(), isRead: true, icon: 'completed', link: { view: ViewType.CLIENTS, action: { type: 'VIEW_CLIENT_DETAILS', id: client_ids.citra }}},
 ];
 
 export const MOCK_SOCIAL_MEDIA_POSTS: SocialMediaPost[] = [
-    {
-        id: 'SMP001',
-        projectId: 'PRJ001',
-        clientName: 'Andi & Siska',
-        postType: PostType.INSTAGRAM_REELS,
-        platform: 'Instagram',
-        scheduledDate: createMockDate(0, 7), // A week from now
-        caption: 'Momen magis dari pernikahan Andi & Siska! ✨ Tonton sampai habis untuk melihat kejutan manisnya. #weddingreels #pernikahanimpian #venapictures',
-        mediaUrl: 'https://example.com/reels/andi_siska.mp4',
-        status: PostStatus.SCHEDULED,
-        notes: 'Pastikan musiknya sudah approved. Gunakan lagu "Perfect - Ed Sheeran".'
-    },
-    {
-        id: 'SMP002',
-        projectId: 'PRJ002',
-        clientName: 'Budi Santoso',
-        postType: PostType.INSTAGRAM_FEED,
-        platform: 'Instagram',
-        scheduledDate: createMockDate(0, 3), // 3 days from now
-        caption: 'Menjelajahi keindahan Bromo bersama Budi & Rekan. Setiap sudutnya adalah puisi. 🌄 #preweddingbromo #venapictures #exploreindonesia',
-        mediaUrl: 'https://example.com/feed/budi_bromo.jpg',
-        status: PostStatus.SCHEDULED,
-    },
-    {
-        id: 'SMP003',
-        projectId: 'PRJ003',
-        clientName: 'Citra Lestari',
-        postType: PostType.INSTAGRAM_STORY,
-        platform: 'Instagram',
-        scheduledDate: createMockDate(0, 1), // Tomorrow
-        caption: 'Behind the scenes lamaran Citra! Geser untuk lihat lebih banyak ->',
-        status: PostStatus.DRAFT,
-        notes: 'Buat polling "Tim lamaran siapa nih?". Tambahkan stiker countdown.'
-    },
-    {
-        id: 'SMP004',
-        projectId: 'PRJ004',
-        clientName: 'Fajar Nugraha',
-        postType: PostType.TIKTOK,
-        platform: 'TikTok',
-        scheduledDate: createMockDate(0, 10), // 10 days from now
-        caption: 'GRWM versi vendor! Persiapan tim Vena Pictures untuk hari besar Fajar & Pasangan. #weddingvendor #behindthescenes #fotograferpernikahan',
-        status: PostStatus.DRAFT,
-    },
-     {
-        id: 'SMP005',
-        projectId: 'PRJ002',
-        clientName: 'Budi Santoso',
-        postType: PostType.BLOG,
-        platform: 'Website',
-        scheduledDate: createMockDate(-1, 0), // Last month
-        caption: '5 Tips Pre-wedding di Bromo: Panduan Lengkap dari Pengalaman Kami',
-        mediaUrl: 'https://example.com/blog/tips_bromo.html',
-        status: PostStatus.POSTED,
-    }
+    { id: '90000000-0000-4000-8000-000000000001', projectId: project_ids.p1, clientName: 'Andi & Siska', postType: PostType.INSTAGRAM_REELS, platform: 'Instagram', scheduledDate: createMockDate(0, 7), caption: 'Momen magis dari pernikahan Andi & Siska! ✨ #weddingreels #venapictures', mediaUrl: 'https://example.com/reels/andi_siska.mp4', status: PostStatus.SCHEDULED, notes: 'Gunakan lagu "Perfect - Ed Sheeran".' },
+    { id: '90000000-0000-4000-8000-000000000002', projectId: project_ids.p2, clientName: 'Budi Santoso (WO)', postType: PostType.INSTAGRAM_FEED, platform: 'Instagram', scheduledDate: createMockDate(-1, 0), caption: 'Menjelajahi keindahan Bromo bersama Budi & Rekan. 🌄 #preweddingbromo #venapictures', mediaUrl: 'https://example.com/feed/budi_bromo.jpg', status: PostStatus.POSTED },
+    { id: '90000000-0000-4000-8000-000000000003', projectId: project_ids.p3, clientName: 'Citra Lestari', postType: PostType.INSTAGRAM_STORY, platform: 'Instagram', scheduledDate: createMockDate(0, 1), caption: 'Behind the scenes lamaran Citra!', status: PostStatus.SCHEDULED, notes: 'Buat polling "Tim lamaran siapa nih?".' },
+    { id: '90000000-0000-4000-8000-000000000004', projectId: project_ids.p4, clientName: 'Fajar Nugraha', postType: PostType.TIKTOK, platform: 'TikTok', scheduledDate: createMockDate(0, 10), caption: 'GRWM versi vendor! #weddingvendor #behindthescenes', status: PostStatus.DRAFT },
+    { id: '90000000-0000-4000-8000-000000000005', projectId: project_ids.p6, clientName: 'Gita Permata', postType: PostType.BLOG, platform: 'Website', scheduledDate: createMockDate(0, 12), caption: '5 Tips Pre-wedding di Kawah Putih: Panduan Lengkap', status: PostStatus.DRAFT },
+    { id: '90000000-0000-4000-8000-000000000006', projectId: project_ids.p9, clientName: 'Fajar Nugraha', postType: PostType.INSTAGRAM_FEED, platform: 'Instagram', scheduledDate: createMockDate(0, 25), caption: 'Happy birthday! 🎂 Serunya pesta ulang tahun anak Fajar.', status: PostStatus.DRAFT },
 ];

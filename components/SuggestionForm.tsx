@@ -23,7 +23,7 @@ const SuggestionForm: React.FC<SuggestionFormProps> = ({ setLeads }) => {
             name: name,
             contactChannel: ContactChannel.SUGGESTION_FORM,
             location: 'Form Online',
-            status: LeadStatus.NEW,
+            status: LeadStatus.DISCUSSION,
             date: new Date().toISOString().split('T')[0],
             notes: `Kontak: ${contact}\n\nPesan:\n${message}`
         };

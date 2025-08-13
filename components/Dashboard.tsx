@@ -1,30 +1,31 @@
 
-
-
-
 import React, { useMemo, useState } from 'react';
-import { Project, Client, Transaction, TransactionType, ViewType, TeamMember, Card, FinancialPocket, PocketType, Lead, LeadStatus, TeamProjectPayment, Package, Asset, AssetStatus, ClientFeedback, Contract, ProjectStatus, ClientStatus, NavigationAction, User } from '../types';
+import { Project, Client, Transaction, TransactionType, ViewType, TeamMember, Card, FinancialPocket, PocketType, Lead, LeadStatus, TeamProjectPayment, Package, Asset, AssetStatus, ClientFeedback, Contract, ClientStatus, NavigationAction, User, ProjectStatusConfig } from '../types';
 import StatCard from './StatCard';
 import Modal from './Modal';
-import { NAV_ITEMS, DollarSignIcon, FolderKanbanIcon, UsersIcon, BriefcaseIcon, ChevronRightIcon, CreditCardIcon, CalendarIcon, ClipboardListIcon, LightbulbIcon, TargetIcon, StarIcon, CameraIcon, FileTextIcon, getProjectStatusColor } from '../constants';
+import { NAV_ITEMS, DollarSignIcon, FolderKanbanIcon, UsersIcon, BriefcaseIcon, ChevronRightIcon, CreditCardIcon, CalendarIcon, ClipboardListIcon, LightbulbIcon, TargetIcon, StarIcon, CameraIcon, FileTextIcon } from '../constants';
 
 // Helper Functions
 const formatCurrency = (amount: number, minimumFractionDigits = 0) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits }).format(amount);
 };
 
-const getStatusClass = (status: ProjectStatus) => {
-    switch (status) {
-      case ProjectStatus.COMPLETED: return 'bg-brand-success/20 text-brand-success';
-      case ProjectStatus.CONFIRMED: return 'bg-blue-500/20 text-blue-400';
-      case ProjectStatus.EDITING: return 'bg-purple-500/20 text-purple-400';
-      case ProjectStatus.PRINTING: return 'bg-orange-500/20 text-orange-400';
-      case ProjectStatus.SHIPPED: return 'bg-teal-500/20 text-teal-400';
-      case ProjectStatus.PENDING: return 'bg-yellow-500/20 text-yellow-400';
-      case ProjectStatus.PREPARATION: return 'bg-gray-500/20 text-gray-300';
-      case ProjectStatus.CANCELLED: return 'bg-brand-danger/20 text-brand-danger';
-      default: return 'bg-gray-500/20 text-gray-400';
-    }
+const getStatusClass = (status: string, config: ProjectStatusConfig[]) => {
+    const statusConfig = config.find(c => c.name === status);
+    const color = statusConfig ? statusConfig.color : '#64748b'; // slate-500
+    // Note: Tailwind purge might not see this. Inline styles are safer for dynamic colors.
+    // This is a simplified approach.
+    const colorMap: { [key: string]: string } = {
+        '#10b981': 'bg-brand-success/20 text-brand-success',
+        '#3b82f6': 'bg-blue-500/20 text-blue-400',
+        '#8b5cf6': 'bg-purple-500/20 text-purple-400',
+        '#f97316': 'bg-orange-500/20 text-orange-400',
+        '#06b6d4': 'bg-teal-500/20 text-teal-400',
+        '#eab308': 'bg-yellow-500/20 text-yellow-400',
+        '#6366f1': 'bg-gray-500/20 text-gray-300',
+        '#ef4444': 'bg-brand-danger/20 text-brand-danger'
+    };
+    return colorMap[color] || 'bg-gray-500/20 text-gray-400';
 };
 
 
@@ -237,35 +238,21 @@ const UpcomingCalendarWidget: React.FC<{ projects: Project[], handleNavigation: 
     )
 }
 
-const ProjectStatusWidget: React.FC<{ projects: Project[]; handleNavigation: (view: ViewType) => void }> = ({ projects, handleNavigation }) => {
-    const statusOrder = [ ProjectStatus.PREPARATION, ProjectStatus.CONFIRMED, ProjectStatus.EDITING, ProjectStatus.PRINTING, ProjectStatus.SHIPPED, ProjectStatus.PENDING ];
+const ProjectStatusWidget: React.FC<{ projects: Project[], projectStatusConfig: ProjectStatusConfig[], handleNavigation: (view: ViewType) => void }> = ({ projects, projectStatusConfig, handleNavigation }) => {
+    const statusOrder = projectStatusConfig.map(s => s.name).filter(name => name !== 'Selesai' && name !== 'Dibatalkan');
 
     const statusCounts = useMemo(() => {
-        const counts = projects.reduce((acc, p) => {
-            if (p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.CANCELLED) {
-                const statusKey = p.subStatus ? `${p.status}: ${p.subStatus}` : p.status;
-                acc[statusKey] = {
-                    count: (acc[statusKey]?.count || 0) + 1,
-                    color: getProjectStatusColor(p.status)
-                };
-            }
-            return acc;
-        }, {} as Record<string, { count: number; color: string; }>);
-        
-        // This is tricky because sub-statuses expand the list.
-        // For the widget, we'll group by main status for simplicity.
-        const mainStatusCounts = statusOrder.map(status => {
-            const count = projects.filter(p => p.status === status).length;
+        return statusOrder.map(statusName => {
+            const count = projects.filter(p => p.status === statusName).length;
+            const config = projectStatusConfig.find(s => s.name === statusName);
             return {
-                name: status,
+                name: statusName,
                 count: count,
-                color: getProjectStatusColor(status)
+                color: config ? config.color : '#64748b'
             };
         }).filter(s => s.count > 0);
 
-        return mainStatusCounts;
-
-    }, [projects]);
+    }, [projects, statusOrder, projectStatusConfig]);
     
     const total = statusCounts.reduce((sum, item) => sum + item.count, 0);
 
@@ -351,21 +338,32 @@ interface DashboardProps {
   clientFeedback: ClientFeedback[];
   contracts: Contract[];
   currentUser: User | null;
+  projectStatusConfig: ProjectStatusConfig[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, teamMembers, cards, pockets, handleNavigation, leads, teamProjectPayments, packages, assets, clientFeedback, contracts, currentUser }) => {
+const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, teamMembers, cards, pockets, handleNavigation, leads, teamProjectPayments, packages, assets, clientFeedback, contracts, currentUser, projectStatusConfig }) => {
   const [activeModal, setActiveModal] = useState<'balance' | 'projects' | 'clients' | 'freelancers' | 'payments' | 'contracts' | null>(null);
   
+  const getSubStatusDisplay = (project: Project) => {
+    if (project.activeSubStatuses?.length) {
+        return `${project.status}: ${project.activeSubStatuses.join(', ')}`;
+    }
+    if (project.status === 'Dikirim' && project.shippingDetails) {
+        return `Dikirim: ${project.shippingDetails}`;
+    }
+    return project.status;
+  };
+
   const summary = useMemo(() => {
     return {
       totalBalance: cards.reduce((sum, c) => sum + c.balance, 0),
-      activeProjects: projects.filter(p => p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.CANCELLED).length,
+      activeProjects: projects.filter(p => p.status !== 'Selesai' && p.status !== 'Dibatalkan').length,
       activeClients: clients.filter(c => c.status === ClientStatus.ACTIVE).length,
       totalFreelancers: teamMembers.length,
     };
   }, [cards, projects, clients, teamMembers]);
 
-  const activeProjects = useMemo(() => projects.filter(p => p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.CANCELLED), [projects]);
+  const activeProjects = useMemo(() => projects.filter(p => p.status !== 'Selesai' && p.status !== 'Dibatalkan'), [projects]);
   const activeClients = useMemo(() => clients.filter(c => c.status === ClientStatus.ACTIVE), [clients]);
   const unpaidTeamPayments = useMemo(() => teamProjectPayments.filter(p => p.status === 'Unpaid'), [teamProjectPayments]);
   
@@ -379,31 +377,33 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, 
   };
   
   return (
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '100ms' }} onClick={() => setActiveModal('balance')}><StatCard icon={<DollarSignIcon className="w-6 h-6" />} iconBgColor="bg-blue-500/20" iconColor="text-blue-400" title="Total Saldo" value={formatCurrency(summary.totalBalance)} /></div>
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '200ms' }} onClick={() => setActiveModal('projects')}><StatCard icon={<FolderKanbanIcon className="w-6 h-6" />} iconBgColor="bg-indigo-500/20" iconColor="text-indigo-400" title="Proyek Aktif" value={summary.activeProjects.toString()} /></div>
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '300ms' }} onClick={() => setActiveModal('clients')}><StatCard icon={<UsersIcon className="w-6 h-6" />} iconBgColor="bg-brand-success/20" iconColor="text-brand-success" title="Klien Aktif" value={summary.activeClients.toString()} /></div>
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '400ms' }} onClick={() => setActiveModal('freelancers')}><StatCard icon={<BriefcaseIcon className="w-6 h-6" />} iconBgColor="bg-orange-500/20" iconColor="text-orange-400" title="Total Freelancer" value={summary.totalFreelancers.toString()} /></div>
+        <div className="col-span-1 xl:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '100ms' }} onClick={() => setActiveModal('balance')}><StatCard icon={<DollarSignIcon className="w-6 h-6" />} iconBgColor="bg-blue-500/20" iconColor="text-blue-400" title="Total Saldo" value={formatCurrency(summary.totalBalance)} /></div>
+            <div className="widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '200ms' }} onClick={() => setActiveModal('projects')}><StatCard icon={<FolderKanbanIcon className="w-6 h-6" />} iconBgColor="bg-indigo-500/20" iconColor="text-indigo-400" title="Proyek Aktif" value={summary.activeProjects.toString()} /></div>
+            <div className="widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '300ms' }} onClick={() => setActiveModal('clients')}><StatCard icon={<UsersIcon className="w-6 h-6" />} iconBgColor="bg-brand-success/20" iconColor="text-brand-success" title="Klien Aktif" value={summary.activeClients.toString()} /></div>
+            <div className="widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '400ms' }} onClick={() => setActiveModal('freelancers')}><StatCard icon={<BriefcaseIcon className="w-6 h-6" />} iconBgColor="bg-orange-500/20" iconColor="text-orange-400" title="Total Freelancer" value={summary.totalFreelancers.toString()} /></div>
+        </div>
 
-        <div className="lg:col-span-8 widget-animate" style={{ animationDelay: '500ms' }}><IncomeChartWidget transactions={transactions} /></div>
-        <div className="lg:col-span-4 widget-animate" style={{ animationDelay: '600ms' }}><UpcomingCalendarWidget projects={projects} handleNavigation={handleNavigation} /></div>
+        <div className="col-span-1 xl:col-span-8 widget-animate" style={{ animationDelay: '500ms' }}><IncomeChartWidget transactions={transactions} /></div>
+        <div className="col-span-1 xl:col-span-4 widget-animate" style={{ animationDelay: '600ms' }}><UpcomingCalendarWidget projects={projects} handleNavigation={handleNavigation} /></div>
 
-        <div className="lg:col-span-7 widget-animate" style={{ animationDelay: '700ms' }}><MyCardsWidget cards={cards} handleNavigation={handleNavigation} /></div>
-        <div className="lg:col-span-5 widget-animate" style={{ animationDelay: '800ms' }}><RecentTransactionsWidget transactions={transactions} /></div>
+        <div className="col-span-1 xl:col-span-7 widget-animate" style={{ animationDelay: '700ms' }}><MyCardsWidget cards={cards} handleNavigation={handleNavigation} /></div>
+        <div className="col-span-1 xl:col-span-5 widget-animate" style={{ animationDelay: '800ms' }}><RecentTransactionsWidget transactions={transactions} /></div>
 
-        <div className="lg:col-span-4 widget-animate" style={{ animationDelay: '900ms' }}><ProjectStatusWidget projects={projects} handleNavigation={handleNavigation} /></div>
-        <div className="lg:col-span-4 widget-animate" style={{ animationDelay: '1000ms' }}><LeadsSummaryWidget leads={leads} handleNavigation={handleNavigation}/></div>
-        <div className="lg:col-span-4 widget-animate" style={{ animationDelay: '1100ms' }}><ClientSatisfactionWidget feedback={clientFeedback} handleNavigation={handleNavigation} /></div>
+        <div className="col-span-1 xl:col-span-4 widget-animate" style={{ animationDelay: '900ms' }}><ProjectStatusWidget projects={projects} projectStatusConfig={projectStatusConfig} handleNavigation={handleNavigation} /></div>
+        <div className="col-span-1 xl:col-span-4 widget-animate" style={{ animationDelay: '1000ms' }}><LeadsSummaryWidget leads={leads} handleNavigation={handleNavigation}/></div>
+        <div className="col-span-1 xl:col-span-4 widget-animate" style={{ animationDelay: '1100ms' }}><ClientSatisfactionWidget feedback={clientFeedback} handleNavigation={handleNavigation} /></div>
         
-        <div className="lg:col-span-3 widget-animate" style={{ animationDelay: '1200ms' }}><AssetSummaryWidget assets={assets} handleNavigation={handleNavigation}/></div>
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '1300ms' }} onClick={() => setActiveModal('payments')}>
+        <div className="col-span-1 xl:col-span-3 widget-animate" style={{ animationDelay: '1200ms' }}><AssetSummaryWidget assets={assets} handleNavigation={handleNavigation}/></div>
+        <div className="col-span-1 xl:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '1300ms' }} onClick={() => setActiveModal('payments')}>
             <StatCard icon={<BriefcaseIcon className="w-6 h-6" />} title="Sisa Pembayaran Tim" value={formatCurrency(teamProjectPayments.filter(p=>p.status === 'Unpaid').reduce((s,p)=>s+p.fee, 0))} iconBgColor="bg-brand-danger/20" iconColor="text-brand-danger" />
         </div>
-        <div className="lg:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '1400ms' }} onClick={() => setActiveModal('contracts')}>
+        <div className="col-span-1 xl:col-span-3 widget-animate cursor-pointer transition-transform duration-200 hover:scale-105" style={{ animationDelay: '1400ms' }} onClick={() => setActiveModal('contracts')}>
              <StatCard icon={<FileTextIcon className="w-6 h-6" />} title="Total Kontrak" value={contracts.length.toString()} iconBgColor="bg-slate-500/20" iconColor="text-slate-400" />
         </div>
-         <div className="lg:col-span-3 widget-animate" style={{ animationDelay: '1500ms' }}>
+         <div className="col-span-1 xl:col-span-3 widget-animate" style={{ animationDelay: '1500ms' }}>
             <StatCard 
                 icon={<CameraIcon className="w-6 h-6" />} 
                 title="Paket Terpopuler" 
@@ -416,7 +416,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, 
                 iconBgColor="bg-rose-500/20" iconColor="text-rose-400" />
         </div>
 
-        <div className="lg:col-span-12 widget-animate" style={{ animationDelay: '1600ms' }}><QuickLinksWidget handleNavigation={handleNavigation} currentUser={currentUser} /></div>
+        <div className="col-span-1 xl:col-span-12 widget-animate" style={{ animationDelay: '1600ms' }}><QuickLinksWidget handleNavigation={handleNavigation} currentUser={currentUser} /></div>
 
          <Modal isOpen={!!activeModal} onClose={() => setActiveModal(null)} title={activeModal ? modalTitles[activeModal] : ''} size="2xl">
                 <div className="max-h-[60vh] overflow-y-auto pr-2">
@@ -450,8 +450,8 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, 
                                         <p className="font-semibold text-brand-text-light">{project.projectName}</p>
                                         <p className="text-sm text-brand-text-secondary">{project.clientName}</p>
                                     </div>
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(project.status)}`}>
-                                        {project.subStatus ? `${project.status}: ${project.subStatus}` : project.status}
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(project.status, projectStatusConfig)}`}>
+                                        {getSubStatusDisplay(project)}
                                     </span>
                                 </div>
                             )) : <p className="text-center text-brand-text-secondary py-8">Tidak ada proyek aktif.</p>}
@@ -495,7 +495,7 @@ const Dashboard: React.FC<DashboardProps> = ({ projects, clients, transactions, 
                             {contracts.length > 0 ? contracts.map(c => (
                                 <div key={c.id} className="p-3 bg-brand-bg rounded-lg">
                                     <p className="font-semibold text-brand-text-light">{c.contractNumber}</p>
-                                    <p className="text-sm text-brand-text-secondary">Klien: {c.clientName1}</p>
+                                    <p className="text-sm text-brand-text-secondary">Klien: {clients.find(client => client.id === c.clientId)?.name || c.clientName1}</p>
                                 </div>
                             )) : <p className="text-center text-brand-text-secondary py-8">Tidak ada kontrak.</p>}
                         </div>

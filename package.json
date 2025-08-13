@@ -1,5 +1,5 @@
 {
-  "name": "copy-of-venapictures-backup",
+  "name": "copy-of-copy-of-venapictures-backup-terbaru-update-perubahan-terbaru-part-2",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@supabase/supabase-js": "^2.55.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

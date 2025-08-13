@@ -1,11 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { TeamMember, TeamProjectPayment, Profile, Transaction, TransactionType, TeamPaymentRecord, Project, RewardLedgerEntry, Card, FinancialPocket, PocketType, PerformanceNoteType, PerformanceNote, FreelancerFeedback, NavigationAction, QRCodeRecord } from '../types';
+import { TeamMember, TeamProjectPayment, Profile, Transaction, TransactionType, TeamPaymentRecord, Project, RewardLedgerEntry, Card, FinancialPocket, PocketType, PerformanceNoteType, PerformanceNote, NavigationAction } from '../types';
 import PageHeader from './PageHeader';
 import Modal from './Modal';
 import FreelancerProjects from './FreelancerProjects';
 import StatCard from './StatCard';
-import { PlusIcon, PencilIcon, Trash2Icon, EyeIcon, PrinterIcon, CreditCardIcon, FileTextIcon, HistoryIcon, Share2Icon, PiggyBankIcon, LightbulbIcon, StarIcon, UsersIcon, AlertCircleIcon, UserCheckIcon, MessageSquareIcon, QrCodeIcon } from '../constants';
+import SignaturePad from './SignaturePad';
+import { PlusIcon, PencilIcon, Trash2Icon, EyeIcon, PrinterIcon, CreditCardIcon, FileTextIcon, HistoryIcon, Share2Icon, PiggyBankIcon, LightbulbIcon, StarIcon, UsersIcon, AlertCircleIcon, UserCheckIcon, MessageSquareIcon, QrCodeIcon, DownloadIcon } from '../constants';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -20,20 +21,37 @@ const formatDate = (dateString: string) => {
     });
 };
 
-
-const generateSHA256 = async (data: string): Promise<string> => {
-    const textAsBuffer = new TextEncoder().encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', textAsBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-};
-
 const getStatusClass = (status: 'Paid' | 'Unpaid') => {
     return status === 'Paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400';
 };
 
 const emptyMember: Omit<TeamMember, 'id' | 'rewardBalance' | 'rating' | 'performanceNotes' | 'portalAccessId'> = { name: '', role: '', email: '', phone: '', standardFee: 0, noRek: '' };
+
+const downloadCSV = (headers: string[], data: (string | number)[][], filename: string) => {
+    const csvRows = [
+        headers.join(','),
+        ...data.map(row => 
+            row.map(field => {
+                const str = String(field);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            }).join(',')
+        )
+    ];
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
 
 // --- NEWLY ADDED HELPER COMPONENTS ---
@@ -223,22 +241,18 @@ interface CreatePaymentTabProps {
     paymentAmount: number | '';
     setPaymentAmount: (amount: number | '') => void;
     onPay: () => void;
-    onShare: () => void;
-    onPrint: () => void;
     onSetTab: (tab: 'projects') => void;
     renderPaymentDetailsContent: () => React.ReactNode;
     cards: Card[];
     monthlyBudgetPocket: FinancialPocket | undefined;
     paymentSourceId: string;
     setPaymentSourceId: (id: string) => void;
-    showDigitalSignature: boolean;
-    setShowDigitalSignature: React.Dispatch<React.SetStateAction<boolean>>;
-    qrCodes: QRCodeRecord[];
+    onSign: () => void;
 }
 
 const CreatePaymentTab: React.FC<CreatePaymentTabProps> = ({ 
-    member, paymentDetails, paymentAmount, setPaymentAmount, onPay, onShare, onPrint, onSetTab, renderPaymentDetailsContent, cards,
-    monthlyBudgetPocket, paymentSourceId, setPaymentSourceId, showDigitalSignature, setShowDigitalSignature, qrCodes
+    member, paymentDetails, paymentAmount, setPaymentAmount, onPay, onSetTab, renderPaymentDetailsContent, cards,
+    monthlyBudgetPocket, paymentSourceId, setPaymentSourceId, onSign
 }) => {
     
     const handlePayClick = () => {
@@ -289,11 +303,11 @@ const CreatePaymentTab: React.FC<CreatePaymentTabProps> = ({
 
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                      <div className="flex items-center gap-2">
-                         <button type="button" onClick={() => setShowDigitalSignature(prev => !prev)} className="button-secondary text-sm inline-flex items-center gap-2">
-                             <QrCodeIcon className="w-4 h-4"/>
-                             {showDigitalSignature ? 'Sembunyikan' : 'Tampilkan'} Tanda Tangan Digital
+                         <button type="button" onClick={onSign} className="button-secondary text-sm inline-flex items-center gap-2">
+                             <PencilIcon className="w-4 h-4"/>
+                             Tanda Tangani Slip
                         </button>
-                        <button type="button" onClick={onPrint} className="button-secondary text-sm inline-flex items-center gap-2">
+                        <button type="button" onClick={() => window.print()} className="button-secondary text-sm inline-flex items-center gap-2">
                              <PrinterIcon className="w-4 h-4"/> Cetak
                         </button>
                     </div>
@@ -325,33 +339,31 @@ interface FreelancersProps {
     setRewardLedgerEntries: React.Dispatch<React.SetStateAction<RewardLedgerEntry[]>>;
     pockets: FinancialPocket[];
     setPockets: React.Dispatch<React.SetStateAction<FinancialPocket[]>>;
-    freelancerFeedback: FreelancerFeedback[];
     cards: Card[];
     setCards: React.Dispatch<React.SetStateAction<Card[]>>;
-    qrCodes: QRCodeRecord[];
+    onSignPaymentRecord: (recordId: string, signatureDataUrl: string) => void;
 }
 
-const Freelancers: React.FC<FreelancersProps> = ({
+export const Freelancers: React.FC<FreelancersProps> = ({
     teamMembers, setTeamMembers, teamProjectPayments, setTeamProjectPayments, teamPaymentRecords, setTeamPaymentRecords,
     transactions, setTransactions, userProfile, showNotification, initialAction, setInitialAction, projects, setProjects,
-    rewardLedgerEntries, setRewardLedgerEntries, pockets, setPockets, freelancerFeedback, cards, setCards, qrCodes
+    rewardLedgerEntries, setRewardLedgerEntries, pockets, setPockets, cards, setCards, onSignPaymentRecord
 }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
     
     const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
     const [formData, setFormData] = useState<Omit<TeamMember, 'id' | 'rewardBalance' | 'rating' | 'performanceNotes' | 'portalAccessId'>>(emptyMember);
     
-    const [detailTab, setDetailTab] = useState<'projects' | 'payments' | 'performance' | 'rewards' | 'feedback' | 'create-payment'>('projects');
+    const [detailTab, setDetailTab] = useState<'projects' | 'payments' | 'performance' | 'rewards' | 'create-payment'>('projects');
     const [projectsToPay, setProjectsToPay] = useState<string[]>([]);
     const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
     const [paymentSourceId, setPaymentSourceId] = useState('');
-    const [showDigitalSignature, setShowDigitalSignature] = useState(false);
     const [activeStatModal, setActiveStatModal] = useState<'total' | 'unpaid' | 'topRated' | 'rewards' | null>(null);
     const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
-
+    const [paymentSlipToView, setPaymentSlipToView] = useState<TeamPaymentRecord | null>(null);
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     
     // New states for performance management
     const [newNote, setNewNote] = useState('');
@@ -367,46 +379,6 @@ const Freelancers: React.FC<FreelancersProps> = ({
             setInitialAction(null);
         }
     }, [initialAction, teamMembers, setInitialAction]);
-    
-    useEffect(() => {
-        if (isPaymentOpen && typeof (window as any).QRCode !== 'undefined') {
-            const qrCodeContainer = document.getElementById('payment-slip-qrcode');
-            if (qrCodeContainer && showDigitalSignature) {
-                const generateQrCode = async () => {
-                    if (!selectedMember) return;
-                    const dataToSign = {
-                        jenis_qr: "Verifikasi Slip Pembayaran",
-                        penerima: selectedMember.name,
-                        nomor_rekening: selectedMember.noRek,
-                        jumlah: formatCurrency(typeof paymentAmount === 'number' ? paymentAmount : 0),
-                        tanggal_bayar: new Date().toISOString()
-                    };
-
-                    const signatureText = qrCodes[0] && typeof qrCodes[0].content === 'string' ? qrCodes[0].content : 'Digitally Signed by Vena Pictures';
-                    const dataString = JSON.stringify(dataToSign);
-                    const hash = await generateSHA256(dataString);
-                    const finalQrData = JSON.stringify({
-                        pesan_tanda_tangan: signatureText,
-                        data_verifikasi: dataToSign,
-                        kode_verifikasi: hash
-                    });
-                    
-                    qrCodeContainer.innerHTML = '';
-                    new (window as any).QRCode(qrCodeContainer, {
-                        text: finalQrData,
-                        width: 80,
-                        height: 80,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: 2 // H
-                    });
-                };
-                setTimeout(generateQrCode, 100);
-            } else if (qrCodeContainer) {
-                qrCodeContainer.innerHTML = '';
-            }
-        }
-    }, [isPaymentOpen, showDigitalSignature, selectedMember, paymentAmount, qrCodes]);
 
     useEffect(() => {
         if (qrModalContent) {
@@ -508,7 +480,6 @@ const Freelancers: React.FC<FreelancersProps> = ({
             setPaymentSourceId('');
         }
         
-        setShowDigitalSignature(false);
         setDetailTab('create-payment');
     };
 
@@ -569,7 +540,6 @@ const Freelancers: React.FC<FreelancersProps> = ({
         
         setProjectsToPay([]);
         setPaymentAmount('');
-        setIsPaymentOpen(false);
         setIsDetailOpen(false);
     };
 
@@ -658,58 +628,96 @@ const Freelancers: React.FC<FreelancersProps> = ({
 
     const monthlyBudgetPocket = useMemo(() => pockets.find(p => p.type === PocketType.EXPENSE), [pockets]);
 
-    const renderPaymentDetailsContent = () => {
-        if (!selectedMember) return null;
-        const projectsBeingPaid = selectedMemberUnpaidProjects.filter(p => projectsToPay.includes(p.id));
+    const handleSaveSignature = (signatureDataUrl: string) => {
+        if (paymentSlipToView) {
+            onSignPaymentRecord(paymentSlipToView.id, signatureDataUrl);
+            setPaymentSlipToView(prev => prev ? { ...prev, vendorSignature: signatureDataUrl } : null);
+        }
+        setIsSignatureModalOpen(false);
+    };
+
+    const renderPaymentSlipBody = (record: TeamPaymentRecord) => {
+        const freelancer = teamMembers.find(m => m.id === record.teamMemberId);
+        if (!freelancer) return null;
+        const projectsBeingPaid = teamProjectPayments.filter(p => record.projectPaymentIds.includes(p.id));
     
         return (
-            <div id="payment-slip-content" className="printable-content bg-white text-black p-6 font-sans">
-                <header className="flex justify-between items-start pb-4 border-b border-slate-200">
-                    <div><h2 className="text-2xl font-bold text-slate-800">SLIP PEMBAYARAN</h2><p className="text-sm text-slate-500">No: PAY-FR-{selectedMember.id.slice(-4)}-{Date.now()}</p></div>
-                    <div className="text-right"><h3 className="font-bold text-lg text-slate-800">{userProfile.companyName}</h3></div>
-                </header>
-                <section className="my-6 space-y-1 text-sm">
-                    <p><strong>Dibayarkan Kepada:</strong> {selectedMember.name}</p>
-                    <p><strong>Nomor Rekening:</strong> {selectedMember.noRek}</p>
-                    <p><strong>Tanggal Bayar:</strong> {new Date().toLocaleDateString('id-ID')}</p>
-                </section>
-                <section>
-                    <h4 className="font-semibold text-slate-600 mb-2 text-sm">Rincian Proyek:</h4>
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-100 print-bg-slate"><tr><th className="p-2 text-left">Proyek</th><th className="p-2 text-right">Fee</th></tr></thead>
-                        <tbody className="divide-y divide-slate-200">
-                            {projectsBeingPaid.map(p => (
-                                <tr key={p.id}>
-                                    <td className="p-2">{projects.find(proj => proj.id === p.projectId)?.projectName || 'N/A'}</td>
-                                    <td className="p-2 text-right">{formatCurrency(p.fee)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </section>
-                <section className="mt-6 flex justify-end">
-                    <div className="w-full sm:w-1/2 md:w-1/3 space-y-2 text-sm text-slate-700">
-                        <div className="flex justify-between font-bold text-base border-t border-slate-200 mt-2 pt-2 text-slate-900">
-                            <span>TOTAL DIBAYAR</span>
-                            <span>{formatCurrency(paymentAmount as number)}</span>
+            <div id={`payment-slip-content-${record.id}`} className="printable-content bg-slate-50 font-sans text-slate-800 printable-area">
+                <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 shadow-lg">
+                    <header className="flex justify-between items-start mb-12">
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-slate-900">{userProfile.companyName}</h1>
+                            <p className="text-sm text-slate-500">{userProfile.address}</p>
                         </div>
-                    </div>
-                </section>
-                <footer className="mt-12 text-xs text-slate-500">
-                    <div className="flex justify-between items-end">
-                        <p>Terima kasih atas kerja samanya.</p>
-                        <div className={`text-center ${showDigitalSignature ? '' : 'hidden'}`}>
-                            <p>Diverifikasi oleh,</p>
-                            <div id="payment-slip-qrcode" className="flex justify-center my-2"></div>
-                            {showDigitalSignature && qrCodes[0] && typeof qrCodes[0].content === 'string' && <p className="text-[8px] text-gray-500 max-w-[100px] text-center mx-auto">{qrCodes[0].content}</p>}
-                            <p className="font-medium text-slate-900 mt-1">({userProfile.authorizedSigner || userProfile.companyName})</p>
+                        <div className="text-right">
+                            <h2 className="text-2xl font-bold uppercase text-slate-400 tracking-widest">Slip Pembayaran</h2>
+                            <p className="text-sm text-slate-500 mt-1">No: <span className="font-semibold text-slate-700">{record.recordNumber}</span></p>
+                            <p className="text-sm text-slate-500">Tanggal: <span className="font-semibold text-slate-700">{formatDate(record.date)}</span></p>
                         </div>
-                    </div>
-                </footer>
+                    </header>
+    
+                    <section className="grid md:grid-cols-2 gap-6 mb-12">
+                        <div className="bg-slate-50 p-6 rounded-xl"><h3 className="text-xs font-semibold uppercase text-slate-400 mb-2">Dibayarkan Kepada</h3><p className="font-bold text-slate-800">{freelancer.name}</p><p className="text-sm text-slate-600">{freelancer.role}</p><p className="text-sm text-slate-600">No. Rek: {freelancer.noRek}</p></div>
+                        <div className="bg-slate-50 p-6 rounded-xl"><h3 className="text-xs font-semibold uppercase text-slate-400 mb-2">Dibayarkan Oleh</h3><p className="font-bold text-slate-800">{userProfile.companyName}</p><p className="text-sm text-slate-600">{userProfile.bankAccount}</p></div>
+                    </section>
+    
+                    <section>
+                        <h3 className="font-semibold text-slate-800 mb-3">Rincian Pembayaran</h3>
+                        <table className="w-full text-left">
+                            <thead><tr className="border-b-2 border-slate-200"><th className="p-3 text-sm font-semibold uppercase text-slate-500">Proyek</th><th className="p-3 text-sm font-semibold uppercase text-slate-500">Peran</th><th className="p-3 text-sm font-semibold uppercase text-slate-500 text-right">Fee</th></tr></thead>
+                            <tbody>
+                                {projectsBeingPaid.map(p => {
+                                    const project = projects.find(proj => proj.id === p.projectId);
+                                    return (
+                                        <tr key={p.id}>
+                                            <td className="p-3 font-semibold text-slate-800">{project?.projectName || 'N/A'}</td>
+                                            <td className="p-3 text-slate-600">{project?.team.find(t => t.memberId === freelancer.id)?.role || freelancer.role}</td>
+                                            <td className="p-3 text-right text-slate-800">{formatCurrency(p.fee)}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </section>
+    
+                    <section className="mt-12">
+                        <div className="flex justify-end"><div className="w-full sm:w-2/5 space-y-2 text-sm"><div className="flex justify-between font-bold text-xl text-slate-900 bg-slate-100 p-4 rounded-lg"><span>TOTAL DIBAYAR</span><span>{formatCurrency(record.totalAmount)}</span></div></div></div>
+                        <div className="flex justify-between items-end mt-12">
+                            <div></div>
+                            <div className="text-center w-2/5">
+                                <p className="text-sm text-slate-600">Diverifikasi oleh,</p>
+                                <div className="h-20 mt-2 flex items-center justify-center">{record.vendorSignature ? (<img src={record.vendorSignature} alt="Tanda Tangan" className="h-20 object-contain" />) : (<div className="h-20 flex items-center justify-center text-xs text-slate-400 italic border-b border-dashed w-full">Belum Ditandatangani</div>)}</div>
+                                <p className="text-sm font-semibold text-slate-800 mt-1 border-t-2 border-slate-300 pt-1">({userProfile.authorizedSigner || userProfile.companyName})</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <footer className="mt-12 pt-8 border-t-2 border-slate-200"><div className="w-full h-2 bg-blue-600 mt-6 rounded"></div></footer>
+                </div>
             </div>
         );
     };
     
+    const handleDownloadFreelancers = () => {
+        const headers = ['Nama', 'Role', 'Email', 'Telepon', 'No. Rekening', 'Fee Belum Dibayar', 'Saldo Hadiah', 'Rating'];
+        const data = teamMembers.map(member => {
+            const unpaidFee = teamProjectPayments
+                .filter(p => p.teamMemberId === member.id && p.status === 'Unpaid')
+                .reduce((sum, p) => sum + p.fee, 0);
+            return [
+                `"${member.name.replace(/"/g, '""')}"`,
+                member.role,
+                member.email,
+                member.phone,
+                member.noRek || '-',
+                unpaidFee,
+                member.rewardBalance,
+                member.rating.toFixed(1)
+            ];
+        });
+        downloadCSV(headers, data, `data-freelancer-${new Date().toISOString().split('T')[0]}.csv`);
+    };
+
     const modalTitles: { [key: string]: string } = {
         total: 'Daftar Semua Freelancer',
         unpaid: 'Rincian Fee Belum Dibayar',
@@ -720,10 +728,15 @@ const Freelancers: React.FC<FreelancersProps> = ({
     return (
         <div className="space-y-6">
             <PageHeader title="Manajemen Freelancer" subtitle="Kelola semua data freelancer, proyek, dan pembayaran.">
-                <button onClick={() => handleOpenForm('add')} className="button-primary inline-flex items-center gap-2">
-                    <PlusIcon className="w-5 h-5"/>
-                    Tambah Freelancer
-                </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={handleDownloadFreelancers} className="button-secondary inline-flex items-center gap-2">
+                        <DownloadIcon className="w-4 h-4"/> Unduh Data
+                    </button>
+                    <button onClick={() => handleOpenForm('add')} className="button-primary inline-flex items-center gap-2">
+                        <PlusIcon className="w-5 h-5"/>
+                        Tambah Freelancer
+                    </button>
+                </div>
             </PageHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -789,7 +802,6 @@ const Freelancers: React.FC<FreelancersProps> = ({
                         <button onClick={() => setDetailTab('payments')} className={`shrink-0 inline-flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm ${detailTab === 'payments'?'border-brand-accent text-brand-accent':'border-transparent text-brand-text-secondary hover:text-brand-text-light'}`}><HistoryIcon className="w-5 h-5"/>Riwayat Pembayaran</button>
                         <button onClick={() => setDetailTab('performance')} className={`shrink-0 inline-flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm ${detailTab === 'performance'?'border-brand-accent text-brand-accent':'border-transparent text-brand-text-secondary hover:text-brand-text-light'}`}><StarIcon className="w-5 h-5"/>Kinerja</button>
                         <button onClick={() => setDetailTab('rewards')} className={`shrink-0 inline-flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm ${detailTab === 'rewards'?'border-brand-accent text-brand-accent':'border-transparent text-brand-text-secondary hover:text-brand-text-light'}`}><PiggyBankIcon className="w-5 h-5"/>Tabungan Hadiah</button>
-                        <button onClick={() => setDetailTab('feedback')} className={`shrink-0 inline-flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm ${detailTab === 'feedback'?'border-brand-accent text-brand-accent':'border-transparent text-brand-text-secondary hover:text-brand-text-light'}`}><MessageSquareIcon className="w-5 h-5"/>Masukan</button>
                         <button onClick={() => handleOpenQrModal(selectedMember)} className={`shrink-0 inline-flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm border-transparent text-brand-text-secondary hover:text-brand-text-light`}><Share2Icon className="w-5 h-5"/>Bagikan Portal</button>
                     </nav></div>
                     <div className="pt-5 max-h-[65vh] overflow-y-auto pr-2">
@@ -815,12 +827,10 @@ const Freelancers: React.FC<FreelancersProps> = ({
                                                         <td className="px-4 py-3 text-brand-text-primary">{formatDate(record.date)}</td>
                                                         <td className="px-4 py-3 text-right font-semibold text-brand-success">{formatCurrency(record.totalAmount)}</td>
                                                         <td className="px-4 py-3 text-center">
-                                                            <button 
-                                                                onClick={() => setExpandedRecordId(expandedRecordId === record.id ? null : record.id)}
-                                                                className="button-secondary text-xs px-3 py-1"
-                                                            >
-                                                                {expandedRecordId === record.id ? 'Tutup' : 'Lihat'}
-                                                            </button>
+                                                           <div className="flex items-center justify-center gap-1">
+                                                                <button onClick={() => setExpandedRecordId(expandedRecordId === record.id ? null : record.id)} className="p-2 text-brand-text-secondary hover:bg-brand-input rounded-full" title={expandedRecordId === record.id ? 'Tutup Rincian' : 'Lihat Rincian'}><EyeIcon className="w-5 h-5" /></button>
+                                                                <button onClick={() => setPaymentSlipToView(record)} className="p-2 text-brand-text-secondary hover:bg-brand-input rounded-full" title="Lihat Slip Pembayaran"><FileTextIcon className="w-5 h-5" /></button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     {expandedRecordId === record.id && (
@@ -852,7 +862,6 @@ const Freelancers: React.FC<FreelancersProps> = ({
                         </div>}
                         {detailTab === 'performance' && <PerformanceTab member={selectedMember} onSetRating={handleSetRating} newNote={newNote} setNewNote={setNewNote} newNoteType={newNoteType} setNewNoteType={setNewNoteType} onAddNote={handleAddNote} onDeleteNote={handleDeleteNote} />}
                         {detailTab === 'rewards' && <RewardSavingsTab member={selectedMember} suggestions={[]} rewardLedger={rewardLedgerEntries.filter(rle => rle.teamMemberId === selectedMember.id)} onWithdraw={handleWithdrawRewards} />}
-                        {detailTab === 'feedback' && <p>Feedback</p>}
                         {detailTab === 'create-payment' && selectedMember && (
                             <CreatePaymentTab
                                 member={selectedMember}
@@ -863,22 +872,42 @@ const Freelancers: React.FC<FreelancersProps> = ({
                                 paymentAmount={paymentAmount}
                                 setPaymentAmount={setPaymentAmount}
                                 onPay={handlePay}
-                                onShare={() => showNotification('Fitur berbagi belum tersedia.')}
-                                onPrint={() => window.print()}
                                 onSetTab={() => setDetailTab('projects')}
-                                renderPaymentDetailsContent={renderPaymentDetailsContent}
+                                renderPaymentDetailsContent={() => renderPaymentSlipBody({ id: `TEMP-${Date.now()}`, recordNumber: `PAY-FR-${selectedMember.id.slice(-4)}-${Date.now()}`, teamMemberId: selectedMember.id, date: new Date().toISOString(), projectPaymentIds: projectsToPay, totalAmount: typeof paymentAmount === 'number' ? paymentAmount : 0 })}
                                 cards={cards}
                                 monthlyBudgetPocket={monthlyBudgetPocket}
                                 paymentSourceId={paymentSourceId}
                                 setPaymentSourceId={setPaymentSourceId}
-                                showDigitalSignature={showDigitalSignature}
-                                setShowDigitalSignature={setShowDigitalSignature}
-                                qrCodes={qrCodes}
+                                onSign={() => { setIsSignatureModalOpen(true); }}
                             />
                         )}
                     </div>
                 </div>
             </Modal>}
+            
+            {paymentSlipToView && (
+                <Modal isOpen={!!paymentSlipToView} onClose={() => setPaymentSlipToView(null)} title={`Slip Pembayaran: ${paymentSlipToView.recordNumber}`} size="3xl">
+                     <div className="printable-area">
+                        {renderPaymentSlipBody(paymentSlipToView)}
+                    </div>
+                    <div className="mt-6 text-right non-printable space-x-2">
+                        <button type="button" onClick={() => setIsSignatureModalOpen(true)} className="button-secondary inline-flex items-center gap-2">
+                             <PencilIcon className="w-4 h-4"/>
+                             Tanda Tangani Slip
+                        </button>
+                        <button type="button" onClick={() => window.print()} className="button-primary inline-flex items-center gap-2">
+                             <PrinterIcon className="w-4 h-4"/> Cetak
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {isSignatureModalOpen && (
+                <Modal isOpen={isSignatureModalOpen} onClose={() => setIsSignatureModalOpen(false)} title="Bubuhkan Tanda Tangan Anda">
+                    <SignaturePad onClose={() => setIsSignatureModalOpen(false)} onSave={handleSaveSignature} />
+                </Modal>
+            )}
+
             <Modal isOpen={!!activeStatModal} onClose={() => setActiveStatModal(null)} title={activeStatModal ? modalTitles[activeStatModal] : ''} size="3xl">
                 <div className="max-h-[60vh] overflow-y-auto pr-2">
                     {activeStatModal === 'total' && (<div className="space-y-3">
@@ -894,13 +923,10 @@ const Freelancers: React.FC<FreelancersProps> = ({
                     </div>)}
                      {activeStatModal === 'rewards' && (<div className="overflow-x-auto">
                         <table className="w-full text-sm"><thead className="bg-brand-input"><tr><th className="p-3 text-left">Tanggal</th><th className="p-3 text-left">Freelancer</th><th className="p-3 text-left">Deskripsi</th><th className="p-3 text-right">Jumlah</th></tr></thead><tbody className="divide-y divide-brand-border">{rewardLedgerEntries.map(entry => (<tr key={entry.id}><td className="p-3 whitespace-nowrap">{formatDate(entry.date)}</td><td className="p-3 font-semibold">{teamMembers.find(tm => tm.id === entry.teamMemberId)?.name || 'N/A'}</td><td className="p-3">{entry.description}</td><td className={`p-3 text-right font-semibold ${entry.amount >= 0 ? 'text-brand-success' : 'text-brand-danger'}`}>{entry.amount >= 0 ? '+' : ''}{formatCurrency(entry.amount)}</td></tr>))}</tbody></table>
-                        {rewardLedgerEntries.length === 0 && <p className="text-center py-8 text-brand-text-secondary">Tidak ada riwayat hadiah.</p>}
                     </div>)}
                 </div>
             </Modal>
-             {qrModalContent && (<Modal isOpen={!!qrModalContent} onClose={() => setQrModalContent(null)} title={qrModalContent.title} size="sm"><div className="text-center p-4"><div id="freelancer-portal-qrcode" className="p-4 bg-white rounded-lg inline-block mx-auto"></div><p className="text-xs text-brand-text-secondary mt-4 break-all">{qrModalContent.url}</p><button onClick={() => { const canvas = document.querySelector('#freelancer-portal-qrcode canvas') as HTMLCanvasElement; if(canvas){ const link = document.createElement('a'); link.download = 'freelancer-portal-qr.png'; link.href = canvas.toDataURL(); link.click(); }}} className="mt-6 button-primary w-full">Unduh</button></div></Modal>)}
+             {qrModalContent && (<Modal isOpen={!!qrModalContent} onClose={() => setQrModalContent(null)} title={qrModalContent.title} size="sm"><div className="text-center p-4"><div id="freelancer-portal-qrcode" className="p-4 bg-white rounded-lg inline-block mx-auto"></div><p className="text-xs text-brand-text-secondary mt-4 break-all">{qrModalContent.url}</p><button onClick={() => { const canvas = document.querySelector('#freelancer-portal-qrcode canvas') as HTMLCanvasElement; if(canvas){ const link = document.createElement('a'); link.download = `portal-qr-${selectedMember?.name.replace(' ','-')}.png`; link.href = canvas.toDataURL(); link.click(); }}} className="mt-6 button-primary w-full">Unduh</button></div></Modal>)}
         </div>
     );
 };
-
-export default Freelancers;
